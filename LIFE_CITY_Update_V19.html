@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>LIFE CITY - City Update</title>
+<style>
+  *{box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none} input,textarea{user-select:none;-webkit-user-select:none} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#87b8d7;font-family:Tahoma,Arial,sans-serif;touch-action:none}
+  #game{position:fixed;inset:0}
+  canvas{display:block}
+  #hud{position:fixed;inset:0;pointer-events:none;color:white;text-shadow:0 2px 4px #000}
+  #status{position:absolute;top:12px;left:12px;background:#101a2dcc;border:1px solid #ffffff55;border-radius:12px;padding:8px 10px;font-size:12px}
+  #joystick{position:absolute;bottom:24px;left:24px;width:132px;height:132px;border-radius:50%;background:#10203366;border:2px solid #ffffff88;pointer-events:auto;touch-action:none}
+  #stick{position:absolute;width:54px;height:54px;left:37px;top:37px;border-radius:50%;background:#e9f4ffcc;border:2px solid #fff;box-shadow:0 3px 12px #0008}
+  .action{position:absolute;pointer-events:auto;touch-action:none;border:1px solid #ffffffaa;background:#132b48cc;color:white;border-radius:50%;width:62px;height:62px;font-size:12px;font-weight:bold;box-shadow:0 3px 10px #0007}
+  #jump{bottom:42px;right:28px} #run{bottom:116px;right:38px;width:54px;height:54px}
+  #energyBox{position:absolute;top:66px;left:12px;background:#101a2ddd;border:1px solid #ffffff55;border-radius:12px;padding:7px 10px;width:145px;font-size:12px}
+  #energyTrack{height:9px;background:#384452;border-radius:8px;margin-top:5px;overflow:hidden}#energyFill{height:100%;width:50%;background:linear-gradient(90deg,#45c46b,#b9e85b);border-radius:8px;transition:width .2s}
+  #bagButton{position:absolute;top:174px;left:12px;pointer-events:auto;background:#172f4ddd;border:1px solid #ffffff88;color:#fff;border-radius:12px;padding:10px 13px;font-weight:bold}
+  #wallet{position:absolute;top:118px;left:12px;background:#101a2ddd;border:1px solid #ffffff55;border-radius:12px;padding:7px 10px;font-size:12px;line-height:1.8}
+  #levelBox{position:absolute;top:12px;left:12px;background:#101a2ddd;border:1px solid #ffffff55;border-radius:12px;padding:8px 11px;font-size:13px;min-width:118px;text-align:center}
+  #wallet{top:62px;left:12px;min-width:118px;text-align:center;font-size:13px}
+  #energyBox{top:125px;left:12px}
+  #bagButton{top:184px;left:12px}
+  #mapButton{top:234px;left:12px}
+  #salaryBox{position:absolute;top:12px;right:12px;background:#101a2ddd;border:1px solid #ffffff55;border-radius:12px;padding:8px 11px;font-size:13px;min-width:118px;text-align:center}
+  #interact{min-width:120px}
+  #mapButton{position:absolute;top:224px;left:12px;pointer-events:auto;background:#176b50ee;border:1px solid #ffffff99;color:#fff;border-radius:12px;padding:10px 16px;font-weight:bold}
+  #mapCanvas{width:100%;height:auto;aspect-ratio:1.25;background:#789b65;border-radius:12px;border:1px solid #ffffff55;display:block}
+  #mapPlaces{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+  #mapPlaces button{font-size:12px;margin:0}
+  @media(max-width:520px){#mapButton{top:226px}}
+  #namePanel input{width:100%;padding:12px;border-radius:10px;border:1px solid #ffffff66;background:#0d1d2d;color:white;font-size:17px;margin:8px 0}
+  @media(max-width:520px){#status{max-width:105px;font-size:10px;top:64px;right:12px}#salaryBox{top:12px;right:12px}#levelBox{top:12px;left:12px}#wallet{top:62px;left:12px}#energyBox{top:125px;left:12px}#bagButton{top:184px;left:12px}#mapButton{top:234px;left:12px}}
+  #interact{position:absolute;bottom:205px;right:22px;pointer-events:auto;display:none;background:#e5a93a;color:#241b0c;border:2px solid #fff;border-radius:13px;padding:12px 16px;font-weight:bold;box-shadow:0 3px 12px #0008}
+  .panel{display:none;position:fixed;z-index:10;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,440px);max-height:78vh;overflow:auto;background:#14283cf2;border:1px solid #ffffff66;border-radius:18px;padding:16px;color:#fff;box-shadow:0 12px 40px #000a;pointer-events:auto;text-shadow:none}
+  .panel h2{margin:0 0 12px;font-size:19px}.panel p{font-size:12px;color:#d4e2ee;line-height:1.7}.panel button{border:0;border-radius:10px;padding:9px 11px;background:#2d78a8;color:#fff;font-weight:bold;margin:4px;cursor:pointer}
+  .closeBtn{float:left;background:#7a3940!important}.itemRow{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #ffffff22;padding:8px 0;font-size:13px}.itemRow span{flex:1}.itemRow small{color:#c7d7e4}
+  .craftPanel{width:min(94vw,560px);max-height:88vh;overflow:auto}#storePanel{width:min(94vw,500px)}.storeGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.storeCard{background:#ffffff12;border:1px solid #ffffff20;border-radius:12px;padding:10px;text-align:center}.storeCard b{display:block;margin:5px}.storeCard small{color:#c7d7e4}
+  @media (orientation:landscape){#joystick{width:112px;height:112px;bottom:15px;left:15px}#stick{left:28px;top:28px}#jump{bottom:25px;right:18px}#run{bottom:94px;right:24px}#interact{bottom:150px}#help{max-width:165px;font-size:10px}}
+  @media (orientation:portrait){#help{max-width:150px;font-size:10px}#joystick{bottom:20px;left:15px}#jump{right:18px;bottom:28px}#run{right:25px;bottom:100px}}
+  #loading{position:fixed;inset:0;display:grid;place-items:center;background:#14283c;color:white;z-index:5;text-align:center;padding:24px}
+  #loading small{display:block;margin-top:10px;opacity:.8}
+ 
+
+ .jewelMarketHeader{background:linear-gradient(90deg,#ef251e,#ff3b27);border:3px solid #b91318;border-radius:12px;padding:14px 10px;text-align:center;font-size:19px;font-weight:900;color:#fff;margin:2px 0 12px;box-shadow:0 4px 0 #8b1414}
+ .jewelMarketGrid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(175px,1fr);gap:10px;background:linear-gradient(145deg,#07558c,#063b72);padding:10px;border-radius:14px;overflow-x:auto;overscroll-behavior-x:contain}
+ .jewelMarketCard{background:linear-gradient(160deg,#13a9f2,#0870c6);border:2px solid #168fd8;border-radius:18px;padding:10px 7px;text-align:center;min-height:185px;color:#fff;box-shadow:0 4px 0 #064b8b}
+ .jewelMarketCard .qty{font-size:22px;font-weight:900;text-align:left}
+ .jewelMarketCard .productIcon{font-size:40px;margin:7px}
+ .jewelMarketCard .productName{font-size:16px;font-weight:900;color:#032c4a;min-height:38px}
+ .jewelMarketCard .price{font-size:20px;font-weight:900;color:#ffd52e;margin:7px}
+ .jewelMarketCard button{background:#f4b900;color:#392400;border:2px solid #ffe27b;border-radius:12px;padding:8px 16px;font-weight:900}
+ @media(min-width:700px){.jewelMarketGrid{grid-auto-flow:unset;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible}}
+ .craftPanel{background:linear-gradient(135deg,#8b461c,#c36a20 48%,#8b451c)!important;border:4px solid #f2b43a!important;box-shadow:0 12px 40px #0009!important;color:#fff8e6}
+ .craftPanel h2{text-align:center;font-size:22px;margin:8px 0 14px;text-shadow:0 2px 3px #43200c}
+ .craftProgress{display:flex;justify-content:space-between;gap:8px;background:#512b16aa;border-radius:10px;padding:8px 12px;font-weight:bold;color:#ffe06a}
+ .craftOptions{display:flex;gap:8px;overflow-x:auto;padding:12px 2px}
+ .craftCard{min-width:104px;background:#ffc21c;border:3px solid #ffe77a;border-radius:14px;padding:10px 7px;color:#56320c;text-align:center;font-weight:bold;box-shadow:0 4px 0 #74400c}
+ .craftCard .big{font-size:30px;display:block}.craftRecipe{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:#542d18aa;border-radius:12px;padding:12px;margin:8px 0;font-size:18px;font-weight:bold}
+ .craftIngredient{background:#ffc21c;color:#5b360d;border:2px solid #ffe47a;border-radius:12px;padding:8px 12px;min-width:64px;text-align:center}
+ .craftActions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+ .craftActions button{min-width:130px;padding:13px 18px;border-radius:14px;border:2px solid #ffe27a;font-weight:bold;font-size:16px}
+ .craftActions .work{background:#ffb900;color:#4b2b05}.craftActions .take{background:#168ee5;color:white}
+ #parkingPanel{position:fixed;inset:12% 8%;z-index:12;display:none;background:#14283cf2;color:white;border:2px solid #ffffff66;border-radius:18px;padding:18px;overflow:auto;text-align:center}
+ #parkingPanel button{margin:8px;padding:12px 18px;border:0;border-radius:12px;background:#e6b928;color:#17202b;font-weight:bold}
+ #driveControls{position:fixed;inset:0;z-index:8;display:none;pointer-events:none;color:white}
+ .driveBtn{position:absolute;pointer-events:auto;touch-action:none;border:2px solid #ffffffaa;background:#14283ccc;color:white;border-radius:16px;min-width:58px;min-height:54px;font-weight:bold;font-size:15px}
+ #steerLeft{left:18px;bottom:28px;width:68px;height:68px} #steerRight{left:96px;bottom:28px;width:68px;height:68px}
+ #gas{right:20px;bottom:28px;width:76px;height:76px;background:#176b3dcc} #brake{right:108px;bottom:28px;width:66px;height:66px;background:#9b2929dd}
+ #clutch{right:20px;bottom:116px;width:66px;height:54px} #gearDown{right:104px;bottom:116px;width:58px} #gearUp{right:170px;bottom:116px;width:58px}
+ #speedometer{position:absolute;right:18px;top:18px;background:#101a2ddd;border:2px solid #ffffff88;border-radius:16px;padding:12px 18px;font-size:20px;font-weight:bold}
+ #driveHelp{position:absolute;left:18px;top:76px;max-width:min(48vw,260px);padding:10px 12px;background:#101a2ddd;border:1px solid #ffffff88;border-radius:12px;font-size:12px;line-height:1.9;text-shadow:0 1px 3px #000;pointer-events:none}
+ @media(max-width:520px){#driveHelp{left:12px;top:72px;max-width:48vw;font-size:10px;line-height:1.8;padding:7px}}
+ #exitVehicle{position:absolute;left:18px;top:18px;pointer-events:auto;background:#9b2929dd}
+  button,canvas,div{ -webkit-tap-highlight-color:transparent }
+
+ #settingsButton{position:absolute;top:282px;left:12px;pointer-events:auto;background:#263e59ee;border:1px solid #ffffff88;color:#fff;border-radius:12px;padding:10px 13px;font-weight:bold}
+ .hudMini{font-size:12px}.settingsTabs,.qualityChoices,.avatarChoices{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.settingsTabs button,.qualityChoices button{flex:1;min-width:90px}.settingsSection{padding:8px 0}.profileCard{display:flex;align-items:center;gap:14px;background:#ffffff12;border:1px solid #ffffff25;border-radius:14px;padding:12px}.profileCard small{display:block;color:#cbd9e6;margin-top:6px;direction:ltr;text-align:right}.avatarPreview,.avatarArt{display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#72c7e9,#314c83);font-size:42px;width:76px;height:76px;border:2px solid #fff8}.avatarChoice{flex:1;min-width:115px;display:flex;align-items:center;flex-direction:column;gap:7px;background:#ffffff14!important;border:2px solid #ffffff30!important}.avatarChoice.selected,.qualityChoices button.selected{border:2px solid #ffd34f!important;background:#946b23!important}.avatarArt{width:70px;height:70px;overflow:hidden}.avatarArt svg,.avatarPreview svg{width:100%;height:100%;display:block}.girlArt{background:linear-gradient(145deg,#f3a4c9,#7b478e)}.boyArt{background:linear-gradient(145deg,#79c6e9,#314c83)}
+ #fuelPanel,#mechanicPanel{z-index:14}.powerMeter{color:#ffdf72!important}
+ @media(max-width:520px){#settingsButton{top:280px;left:12px}}
+
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="loading">در حال بارگذاری شهر LIFE CITY...<small>اگر صفحه خالی ماند، اینترنت را روشن کن.</small></div>
+<div id="hud">
+  <div id="status">وضعیت: آزاد<br>بازیکن: 001</div>
+  <div id="levelBox">⭐ <b id="starsText">۰</b><br>لول <b id="levelText">۱</b></div>
+  <div id="salaryBox">💼 حقوق: <b id="salaryText">۰</b></div>
+  <div id="wallet">🪙 <b id="coinText">۲۰۰۰</b><br>💎 <b id="gemText">۵۰</b></div>
+  <div id="energyBox">انرژی: <b id="energyText">5 / 10</b><div id="energyTrack"><div id="energyFill"></div></div></div>
+  <button id="bagButton">🎒 کوله‌پشتی</button>
+  <button id="mapButton">🗺️ نقشه شهر</button>
+  <button id="interact">تعامل</button>
+  <div id="joystick"><div id="stick"></div></div>
+  <button class="action" id="jump">پرش</button>
+  <button class="action" id="run">دویدن</button>
+</div>
+<div id="parkingPanel"><h2>🅿️ پارکینگ LIFE CITY</h2><p>ماشین موردنظر را انتخاب کن.</p><button id="selectTractor">🚜 انتخاب تراکتور</button><button id="closeParking">بازگشت</button></div>
+<div id="driveControls">
+ <div id="speedometer"><span id="speedValue">۰ km/h</span><br><small id="gearText">دنده: خلاص</small><br><small id="fuelText">⛽ سوخت: ۱۰۰٪</small><br><small id="powerText" class="powerMeter">⚙️ قدرت: ۱۰۰٪</small></div>
+ <div id="driveHelp">🚜 راه‌اندازی تراکتور<br>۱) دنده + را بزن تا دنده ۱ شود.<br>۲) گاز را نگه دار تا حرکت کند.<br>۳) فرمان چپ و راست برای پیچیدن است.<br>۴) ترمز برای توقف؛ دنده − برای خلاص/عقب.<br>۵) کلاچ را بگیر تا نیرو قطع شود.</div>
+ <button class="driveBtn" id="exitVehicle">پیاده شدن</button>
+ <button class="driveBtn" id="steerLeft">◀ فرمان</button><button class="driveBtn" id="steerRight">فرمان ▶</button>
+ <button class="driveBtn" id="gas">گاز</button><button class="driveBtn" id="brake">ترمز</button>
+ <button class="driveBtn" id="clutch">کلاچ</button><button class="driveBtn" id="gearDown">دنده −</button><button class="driveBtn" id="gearUp">دنده +</button>
+</div>
+</div>
+<div id="bagPanel" class="panel"><button class="closeBtn" id="closeBag">بستن</button><h2>🎒 کوله‌پشتی</h2><p>خوراکی را انتخاب کن تا مصرف شود. انرژی حداکثر ۱۰ است.</p><div id="inventoryList"></div></div>
+<div id="storePanel" class="panel"><button class="closeBtn" id="closeStore">بستن</button><h2 id="storeTitle">🛒 سوپرمارکت LIFE CITY</h2><p id="storeDesc">برای خرید محصول، قیمت را بررسی کن.</p><div class="storeGrid" id="storeGrid"></div><p id="storeMessage">خریدها به کوله‌پشتی اضافه می‌شوند.</p></div>
+<div id="bakePanel" class="panel craftPanel"><button class="closeBtn" id="closeBake">بستن</button><h2 id="craftTitle">🔥 درست کردن محصول</h2><div class="craftProgress"><span id="craftLevel">۰/۱۰</span><span id="craftReward">دستمزد: +۰ 🪙</span></div><div id="bakeOptions" class="craftOptions"></div><div id="craftRecipe" class="craftRecipe">یک محصول را انتخاب کن.</div><div id="craftActions" class="craftActions"></div><p id="bakeMessage"></p></div>
+<div id="bankPanel" class="panel"><button class="closeBtn" id="closeBank">بستن</button><h2>🏦 بانک LIFE CITY</h2><p>برای نقد کردن حقوق به یکی از باجه‌ها مراجعه کن. کارمزد نقد کردن ۱۵٪ است.</p><div id="bankInfo"></div><button id="cashSalary">نقد کردن حقوق در باجه</button><p id="bankMessage"></p></div>
+<div id="sellerPanel" class="panel"><button class="closeBtn" id="closeSeller">بستن</button><h2 id="sellerTitle">میز فروش</h2><p id="sellerDesc"></p><div id="sellerContent"></div></div>
+<button id="settingsButton" class="hudMini">⚙️ تنظیمات</button>
+<div id="settingsPanel" class="panel"><button class="closeBtn" id="closeSettings">بستن</button><h2>⚙️ تنظیمات بازی</h2><div class="settingsTabs"><button data-tab="account">حساب کاربری</button><button data-tab="camera">دوربین</button><button data-tab="quality">کیفیت و گرافیک</button></div>
+<section id="settings-account" class="settingsSection"><h3>👤 حساب کاربری</h3><div class="profileCard"><div id="profileAvatarPreview" class="avatarPreview">👨🏻‍🌾</div><div><b id="profileName">بدون نام</b><small id="profileId">شناسه: LC-000000</small></div></div><p>برای ثبت یا تغییر نام، باید به ساختمان ثبت احوال بروی.</p><button id="goRegistry">رفتن به ثبت احوال و ثبت نام</button><h3>انتخاب تصویر پروفایل</h3><div class="avatarChoices"><button class="avatarChoice selected" data-avatar="boy"><span class="avatarArt boyArt">👨🏻‍🌾</span><b>تصویر پسرانه</b></button><button class="avatarChoice" data-avatar="girl"><span class="avatarArt girlArt">👩🏻‍🌾</span><b>تصویر دخترانه</b></button></div></section>
+<section id="settings-camera" class="settingsSection" style="display:none"><h3>🎥 نوع دوربین</h3><button id="cameraThird">نمای سوم شخص</button><button id="cameraFirst">نمای اول شخص</button><p id="cameraSettingText">حالت فعلی: سوم شخص</p></section>
+<section id="settings-quality" class="settingsSection" style="display:none"><h3>✨ کیفیت و گرافیک</h3><div class="qualityChoices"><button data-quality="low">پایین</button><button data-quality="medium" class="selected">متوسط</button><button data-quality="high">بالا</button></div><p id="qualityText">کیفیت متوسط فعال است.</p><p>کیفیت بالا سایه‌ها و وضوح تصویر را بیشتر می‌کند و ممکن است روی گوشی فشار بیشتری وارد کند.</p></section></div>
+<div id="fuelPanel" class="panel"><button class="closeBtn" id="closeFuel">بستن</button><h2>⛽ پمپ بنزین LIFE CITY</h2><p>هر خرید، ۱۰٪ به باک تراکتور اضافه می‌کند.</p><div id="fuelOptions" class="storeGrid"></div><p id="fuelMessage"></p></div>
+<div id="mechanicPanel" class="panel"><button class="closeBtn" id="closeMechanic">بستن</button><h2>🔧 تعمیرگاه LIFE CITY</h2><p id="mechanicInfo"></p><button id="repairTractor">تعمیر کامل تراکتور</button><p id="mechanicMessage"></p></div>
+<div id="mapPanel" class="panel"><button class="closeBtn" id="closeMap">بستن</button><h2>🗺️ نقشه شهر LIFE CITY</h2><p>همه مکان‌های مهم روی نقشه مشخص شده‌اند. یک مکان را انتخاب کن تا موقعیتش روی نقشه علامت‌گذاری شود.</p><canvas id="mapCanvas" width="820" height="680"></canvas><div id="mapPlaces"></div><p id="mapInfo">نقطه آبی: موقعیت بازیکن | نقطه زرد: مقصد | P: پارکینگ فعال تراکتور</p></div>
+<div id="namePanel" class="panel"><button class="closeBtn" id="closeName">بستن</button><h2>🏛️ ثبت احوال LIFE CITY</h2><p>نام بازیکن را وارد کن. حداکثر ۸ نویسه؛ فارسی، انگلیسی و علامت‌ها مجازند.</p><input id="playerNameInput" maxlength="8" autocomplete="off" placeholder="نام بازیکن"><button id="savePlayerName">ثبت نام</button><p id="nameMessage"></p></div>
+<script>
+function startLifeCity(){
+
+ document.addEventListener('copy',e=>e.preventDefault());document.addEventListener('cut',e=>e.preventDefault());document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('selectstart',e=>e.preventDefault());document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&['c','x','a'].includes(e.key.toLowerCase()))e.preventDefault();});
+ if(!window.THREE){document.getElementById('loading').innerHTML='کتابخانه سه‌بعدی بارگذاری نشد.<small>این فایل برای اجرا به اینترنت نیاز دارد.</small>';return;}
+ const scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x91c4e4);
+ scene.fog=new THREE.Fog(0x91c4e4,45,150);
+ const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,250);
+ let renderer; try { renderer=new THREE.WebGLRenderer({antialias:true}); } catch(e) { document.getElementById('loading').innerHTML='مرورگر نتوانست گرافیک سه‌بعدی را اجرا کند.<small>در تنظیمات مرورگر، شتاب‌دهی سخت‌افزاری را فعال کن.</small>'; return; }
+ renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2.15));
+ renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.18;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ document.getElementById('game').appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xdff3ff,0x64704b,2.0));
+ const sun=new THREE.DirectionalLight(0xfff1d2,2.3); sun.position.set(-35,60,25); sun.castShadow=true;
+ sun.shadow.mapSize.set(3072,3072); sun.shadow.camera.left=-65;sun.shadow.camera.right=65;sun.shadow.camera.top=65;sun.shadow.camera.bottom=-65;scene.add(sun);
+ const mat=(c,r=.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(240,240),mat(0x789b65));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+ // Continuous city road grid: every road runs fully across the map.
+ const sidewalkMat=mat(0xb9b8b0), curbMat=mat(0x858b8e), asphalt=mat(0x303943), lane=mat(0xf4e8bf);
+ for(let p=-80;p<=80;p+=40){
+   // Full uninterrupted asphalt strips
+   box(15,.12,220,asphalt,p,.10,0);
+   box(220,.12,15,asphalt,0,.10,p);
+   // Sidewalk sections stop at every crossing so they never cover the asphalt.
+   const crossings=[]; for(let q=-80;q<=80;q+=40) crossings.push(q);
+   function addSegments(axis, fixed, side, material, width, height, offset){
+     let cursor=-110;
+     for(const q of crossings){
+       const a=q-7.65, b=q+7.65;
+       if(a>cursor){
+         const len=a-cursor, mid=(cursor+a)/2;
+         if(axis==='z') box(width,height,len,material,fixed+side*offset,.16,mid);
+         else box(len,height,width,material,mid,.16,fixed+side*offset);
+       }
+       cursor=b;
+     }
+     if(cursor<110){
+       const len=110-cursor,mid=(cursor+110)/2;
+       if(axis==='z') box(width,height,len,material,fixed+side*offset,.16,mid);
+       else box(len,height,width,material,mid,.16,fixed+side*offset);
+     }
+   }
+   for(const side of [-1,1]){
+     addSegments('z',p,side,sidewalkMat,2.5,.22,8.75);
+     addSegments('x',p,side,sidewalkMat,2.5,.22,8.75);
+     addSegments('z',p,side,curbMat,.22,.28,7.5);
+     addSegments('x',p,side,curbMat,.22,.28,7.5);
+   }
+   // Dashed center markings, not solid barriers
+   for(let k=-104;k<=104;k+=12){
+     box(.16,.025,5,lane,p,.18,k);
+     box(5,.025,.16,lane,k,.18,p);
+   }
+ }
+ // road and sidewalk grid
+ function box(w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o;}
+ // Collision shapes keep the player outside buildings, trees and street lamps.
+ const solidRects=[]; const solidCircles=[];
+ const parkingSigns=[
+   {x:-9.15,z:-48,yaw:Math.PI/2,spawnX:-11.8,spawnZ:-48},
+   {x:30.85,z:-48,yaw:-Math.PI/2,spawnX:33.5,spawnZ:-48},
+   {x:-49.15,z:32,yaw:Math.PI/2,spawnX:-51.8,spawnZ:32},
+   {x:70.85,z:32,yaw:-Math.PI/2,spawnX:73.5,spawnZ:32}
+ ];
+ // sidewalks and city blocks
+ // District identity: warm bakery quarter, blue civic quarter, and greener market avenue.
+ const buildingColors=[0xe4d7c5,0xb8cbd4,0xd9b6a0,0x9eafba,0xe8e1d3,0xb9c9a9,0xc6b6d6,0xd4a66a,0x8faeb7,0xc7d2df];
+ for(let gx=-2;gx<=1;gx++)for(let gz=-2;gz<=1;gz++){
+   // Buildings are placed in the blocks BETWEEN roads, never on the asphalt.
+   if((gx===0 && gz===-1) || (gx===-1 && gz===0) || (gx===-1 && gz===-1) || (gx===0 && gz===1) || (gx===1 && gz===-1))continue; // reserve bakery and supermarket blocks
+   const x=gx*40+20+(Math.random()-.5)*3,z=gz*40+20+(Math.random()-.5)*3;
+   const w=10+Math.random()*7,d=10+Math.random()*7,h=10+Math.random()*28;
+   solidRects.push({minX:x-w/2-0.55,maxX:x+w/2+0.55,minZ:z-d/2-0.55,maxZ:z+d/2+0.55});
+   const b=box(w,h,d,mat(buildingColors[Math.floor(Math.random()*buildingColors.length)]),x,h/2,z);
+   // windows on front
+   const win=mat(0x78b6d2,.35);
+   for(let yy=2.5;yy<h-1;yy+=3.3)for(let xx=-w/2+1.7;xx<w/2-1;xx+=3){
+     box(.9,1.35,.08,win,x+xx,yy,z-d/2-.05);
+   }
+   // roof trim
+   box(w+.5,.45,d+.5,mat(0x555e68),x,h+.2,z);box(w+.7,.18,.22,mat(0xe0b65c),x,h+.48,z-d/2-.08);for(const side of [-1,1]){const sconce=new THREE.Mesh(new THREE.SphereGeometry(.12,8,6),new THREE.MeshStandardMaterial({color:0xffd68a,emissive:0xffb54a,emissiveIntensity:.7}));sconce.position.set(x+side*(w/2-.7),2.2,z-d/2-.12);scene.add(sconce);}
+ }
+ // Supermarket: an accessible room with an open front doorway.
+ const mx=-20,mz=20,storeW=18,storeD=15,storeFront=mz-storeD/2;
+ // Floor and exterior canopy
+ box(storeW,.28,storeD,mat(0xe2d7c2),mx,.18,mz);
+ box(storeW+.8,.45,storeD+.8,mat(0x267b63),mx,8.1,mz);
+ // Walls leave a 3.2-unit doorway in the front wall.
+ const wallMat=mat(0xf0e9da);
+ box(storeW,7.6,.45,wallMat,mx,3.8,mz+storeD/2);
+ box(.45,7.6,storeD,wallMat,mx-storeW/2,3.8,mz);
+ box(.45,7.6,storeD,wallMat,mx+storeW/2,3.8,mz);
+ box((storeW-3.2)/2,7.6,.45,wallMat,mx-(storeW+3.2)/4,3.8,storeFront);
+ box((storeW-3.2)/2,7.6,.45,wallMat,mx+(storeW+3.2)/4,3.8,storeFront);
+ // Large shop windows on front wall and a green sign.
+ box(5.8,1.9,.12,mat(0x78c5d8,.25),mx-5.6,4.7,storeFront-.25);
+ box(5.8,1.9,.12,mat(0x78c5d8,.25),mx+5.6,4.7,storeFront-.25);
+ const storeSignCanvas=document.createElement('canvas');storeSignCanvas.width=640;storeSignCanvas.height=150;
+ const storeCtx=storeSignCanvas.getContext('2d');storeCtx.fillStyle='#176b50';storeCtx.fillRect(0,0,640,150);storeCtx.fillStyle='#fff4d4';storeCtx.font='bold 66px Arial';storeCtx.textAlign='center';storeCtx.fillText('SUPERMARKET',320,98);
+ const storeSign=new THREE.Mesh(new THREE.PlaneGeometry(12,2.8),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(storeSignCanvas)}));storeSign.position.set(mx,7.1,storeFront-.28);scene.add(storeSign);
+ // Interior shelves, colorful packages and checkout counter.
+ const shelfMat=mat(0x8b6746), shelfTop=mat(0xd8c09a), packMats=[mat(0xe45d4e),mat(0x42a7d4),mat(0xe6c24f),mat(0x64b66a),mat(0x9c75c8)];
+ const storeSolids=[];
+ for(const sx of [-5.3,0,5.3]){
+   box(1.5,2.3,7.2,shelfMat,mx+sx,1.35,mz+1.1);
+   for(const level of [0.65,1.35,2.05]){
+     box(1.7,.12,7.5,shelfTop,mx+sx,level,mz+1.1);
+     for(let j=0;j<5;j++)box(.48,.48,.62,packMats[(j+Math.round(sx))%packMats.length],mx+sx,level+.3,mz-1.8+j*1.35);
+   }
+   storeSolids.push({minX:mx+sx-1.05,maxX:mx+sx+1.05,minZ:mz-2.8,maxZ:mz+4.9});
+ }
+ box(5,.15,1.4,shelfTop,mx,1.05,mz-3.7);box(5,.9,1.2,shelfMat,mx,.55,mz-3.7);
+ storeSolids.push({minX:mx-2.7,maxX:mx+2.7,minZ:mz-4.45,maxZ:mz-2.95});
+ // Separate player-operated selling counter near the side wall.
+ box(3.6,.18,1.3,mat(0x9a704a),mx+6.2,1.05,mz-3.5);box(.18,1,.18,shelfMat,mx+4.7,.5,mz-3.5);box(.18,1,.18,shelfMat,mx+7.7,.5,mz-3.5);
+ const superSell={x:mx+6.2,z:mz-5.0,frontZ:mz-2.55};storeSolids.push({minX:mx+4.4,maxX:mx+8.0,minZ:mz-4.2,maxZ:mz-2.8});
+ // Collision walls and shelf aisles; the doorway remains clear.
+ solidRects.push({minX:mx-storeW/2-.45,maxX:mx-storeW/2+.45,minZ:mz-storeD/2,maxZ:mz+storeD/2});
+ solidRects.push({minX:mx+storeW/2-.45,maxX:mx+storeW/2+.45,minZ:mz-storeD/2,maxZ:mz+storeD/2});
+ solidRects.push({minX:mx-storeW/2,maxX:mx+storeW/2,minZ:mz+storeD/2-.45,maxZ:mz+storeD/2+.45});
+ solidRects.push({minX:mx-7.4,maxX:mx-1.05,minZ:storeFront-.45,maxZ:storeFront+.45});
+ solidRects.push({minX:mx+1.05,maxX:mx+7.4,minZ:storeFront-.45,maxZ:storeFront+.45});
+ // Add shelf obstacles only while the player is inside the shop.
+ // Kiosk: a small open-front street stand on the sidewalk-side city block.
+ const kx=-20,kz=-20;
+ const kioskBase=mat(0x9b6840), kioskRoof=mat(0xc74736), kioskGoods=[mat(0xe6c34d),mat(0x4a9dcc),mat(0x65b86c)];
+ box(7,.25,5,kioskBase,kx,.18,kz);box(7,.35,5,kioskRoof,kx,3.5,kz);
+ box(.25,3,5,kioskBase,kx-3.35,1.7,kz);box(.25,3,5,kioskBase,kx+3.35,1.7,kz);
+ box(7,2.8,.25,kioskBase,kx,1.55,kz+2.38);
+ box(7,.8,.65,mat(0x6c422d),kx,1.0,kz-2.2);
+ for(let i=0;i<6;i++)box(.65,.7,.6,kioskGoods[i%3],kx-2.4+i*.95,1.8,kz-2.05);
+ const kioskSignCanvas=document.createElement('canvas');kioskSignCanvas.width=400;kioskSignCanvas.height=100;
+ const kioskCtx=kioskSignCanvas.getContext('2d');kioskCtx.fillStyle='#a83228';kioskCtx.fillRect(0,0,400,100);kioskCtx.fillStyle='white';kioskCtx.font='bold 48px Arial';kioskCtx.textAlign='center';kioskCtx.fillText('KIOSK',200,68);
+ const kioskSign=new THREE.Mesh(new THREE.PlaneGeometry(5,1.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(kioskSignCanvas)}));kioskSign.position.set(kx,3.0,kz-2.58);scene.add(kioskSign);
+ const kioskCounter={x:kx,z:kz-3.4};
+ // Second kiosk on the far side of town.
+ const k2x=100,k2z=80;
+ box(7,.25,5,kioskBase,k2x,.18,k2z);box(7,.35,5,kioskRoof,k2x,3.5,k2z);
+ box(.25,3,5,kioskBase,k2x-3.35,1.7,k2z);box(.25,3,5,kioskBase,k2x+3.35,1.7,k2z);
+ box(7,2.8,.25,kioskBase,k2x,1.55,k2z+2.38);box(7,.8,.65,mat(0x6c422d),k2x,1.0,k2z-2.2);
+ for(let i=0;i<6;i++)box(.65,.7,.6,kioskGoods[i%3],k2x-2.4+i*.95,1.8,k2z-2.05);
+ const kiosk2Sign=new THREE.Mesh(new THREE.PlaneGeometry(5,1.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(kioskSignCanvas)}));kiosk2Sign.position.set(k2x,3.0,k2z-2.58);scene.add(kiosk2Sign);
+ const kioskCounter2={x:k2x,z:k2z-3.4};
+ solidRects.push({minX:k2x-3.6,maxX:k2x-3.05,minZ:k2z-2.7,maxZ:k2z+2.7},{minX:k2x+3.05,maxX:k2x+3.6,minZ:k2z-2.7,maxZ:k2z+2.7},{minX:k2x-3.5,maxX:k2x+3.5,minZ:k2z+2.15,maxZ:k2z+2.7},{minX:k2x-2.8,maxX:k2x+2.8,minZ:k2z-4.0,maxZ:k2z-3.2});
+solidRects.push({minX:kx-3.6,maxX:kx-3.05,minZ:kz-2.7,maxZ:kz+2.7},{minX:kx+3.05,maxX:kx+3.6,minZ:kz-2.7,maxZ:kz+2.7},{minX:kx-3.5,maxX:kx+3.5,minZ:kz+2.15,maxZ:kz+2.7},{minX:kx-2.8,maxX:kx+2.8,minZ:kz-4.0,maxZ:kz-3.2});
+ // Civil registry building with a clear doorway and an interior desk.
+ const rx=20,rz=60,regFront=rz-7.5;
+ box(18,.25,15,mat(0xd7d4cb),rx,.18,rz);
+ box(18.8,.5,15.8,mat(0x315b82),rx,7.85,rz); // complete registry roof
+ const regWall=mat(0xd9e0e8),regTrim=mat(0x315b82);
+ box(18,7.6,.45,regWall,rx,3.8,rz+7.5);
+ box(18,.4,.7,regTrim,rx,7.8,rz+7.5);box(.45,7.6,15,regWall,rx-9,3.8,rz);box(.45,7.6,15,regWall,rx+9,3.8,rz);box(18,7.6,.45,regWall,rx,3.8,rz+7.5);
+ // front facade, with a 3.4-unit entrance gap
+ box(7.3,7.6,.45,regWall,rx-5.35,3.8,regFront);box(7.3,7.6,.45,regWall,rx+5.35,3.8,regFront);
+ box(8,1.2,.25,regTrim,rx,7.0,regFront-.3);
+ const regCanvas=document.createElement('canvas');regCanvas.width=500;regCanvas.height=120;const regCtx=regCanvas.getContext('2d');regCtx.fillStyle='#315b82';regCtx.fillRect(0,0,500,120);regCtx.fillStyle='white';regCtx.font='bold 54px Arial';regCtx.textAlign='center';regCtx.fillText('CIVIL REGISTRY',250,80);
+ const regSign=new THREE.Mesh(new THREE.PlaneGeometry(8,1.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(regCanvas)}));regSign.position.set(rx,7,regFront-.48);scene.add(regSign);
+ box(5,.9,1.5,mat(0x76513b),rx,1.05,rz+1.8);box(5,.12,1.5,mat(0xd8b98b),rx,1.55,rz+1.8);
+ const regSolids=[{minX:rx-9.5,maxX:rx-8.5,minZ:rz-7.5,maxZ:rz+7.5},{minX:rx+8.5,maxX:rx+9.5,minZ:rz-7.5,maxZ:rz+7.5},{minX:rx-9,maxX:rx+9,minZ:rz+7.0,maxZ:rz+8.0},{minX:rx-9,maxX:rx-3.4,minZ:regFront-.5,maxZ:regFront+.5},{minX:rx+3.4,maxX:rx+9,minZ:regFront-.5,maxZ:regFront+.5},{minX:rx-2.8,maxX:rx+2.8,minZ:rz+1.0,maxZ:rz+2.8}];
+ solidRects.push(...regSolids);
+ // Bank landmark with roof, open entrance, vault and two service desks.
+ const bankX=0,bankZ=60,bankFront=bankZ-7.5;
+ box(18,.25,15,mat(0xd8dce2),bankX,.18,bankZ);
+ const bankWall=mat(0xdce5ed),bankBlue=mat(0x245b87);
+ box(18,8,.45,bankWall,bankX,4,bankZ+7.5);box(.45,8,15,bankWall,bankX-9,4,bankZ);box(.45,8,15,bankWall,bankX+9,4,bankZ);
+ box(6.8,8,.45,bankWall,bankX-5.6,4,bankFront);box(6.8,8,.45,bankWall,bankX+5.6,4,bankFront);
+ box(18,.5,15,bankBlue,bankX,8.2,bankZ);
+ const bankSignCanvas=document.createElement('canvas');bankSignCanvas.width=500;bankSignCanvas.height=120;const bankCtx=bankSignCanvas.getContext('2d');bankCtx.fillStyle='#245b87';bankCtx.fillRect(0,0,500,120);bankCtx.fillStyle='white';bankCtx.font='bold 58px Arial';bankCtx.textAlign='center';bankCtx.fillText('BANK',250,82);
+ const bankSign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.7),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(bankSignCanvas)}));bankSign.position.set(bankX,7,bankFront-.3);scene.add(bankSign);
+ // Vault on rear wall
+ box(4.2,4.3,1.0,mat(0x596674),bankX,2.25,bankZ+5.9);const vaultDoor=new THREE.Mesh(new THREE.CircleGeometry(1.35,24),mat(0x9ba8b2));vaultDoor.position.set(bankX,2.5,bankZ+5.35);scene.add(vaultDoor);
+ // Two service counters
+ for(const dx of [-4,4]){box(3.2,1.1,1.2,mat(0x76513b),bankX+dx,1.0,bankZ+1.8);box(3.2,.12,1.25,mat(0xd5bd94),bankX+dx,1.62,bankZ+1.8);box(3.2,1.0,.12,bankBlue,bankX+dx,2.2,bankZ+1.2);}
+ const bankSolids=[{minX:bankX-9.5,maxX:bankX-8.5,minZ:bankZ-7.5,maxZ:bankZ+7.5},{minX:bankX+8.5,maxX:bankX+9.5,minZ:bankZ-7.5,maxZ:bankZ+7.5},{minX:bankX-9,maxX:bankX+9,minZ:bankZ+7,maxZ:bankZ+8},{minX:bankX-9,maxX:bankX-3.4,minZ:bankFront-.5,maxZ:bankFront+.5},{minX:bankX+3.4,maxX:bankX+9,minZ:bankFront-.5,maxZ:bankFront+.5},{minX:bankX-2.3,maxX:bankX+2.3,minZ:bankZ+5.1,maxZ:bankZ+6.6}];solidRects.push(...bankSolids);
+
+ // Two-storey jeweller: distinct gold-and-teal facade, ground-floor counter and upper necklace workshop.
+ const jx=60,jz=-20,jFront=jz-7.5,jWall=mat(0x174e50),jGold=mat(0xd6a83c),jGlass=mat(0x69c6d2,.22);
+ box(36.7,.3,30,mat(0xddd2b8),jx,.18,jz);
+ box(36.7,6.85,.42,jWall,jx,3.425,jz+15);
+ box(.42,13.7,30,jWall,jx-18.35,6.85,jz);box(.42,13.7,30,jWall,jx+18.35,6.85,jz);
+ box(14.35,13.7,.42,jWall,jx-11.175,6.85,jFront);box(14.35,13.7,.42,jWall,jx+11.175,6.85,jFront);
+ box(36.7,.48,30,jGold,jx,6.95,jz); // upper floor raised by about two thirds
+ box(36.7,.55,30,jWall,jx,13.95,jz); // taller roof
+ // Full rear wall on the upper floor: closes the previously open back.
+ box(36.7,6.8,.42,jWall,jx,10.4,jz+15);
+ box(5.8,3.1,.12,jGlass,jx-6.3,3.5,jFront-.25);box(5.8,3.1,.12,jGlass,jx+6.3,3.5,jFront-.25);
+ box(5.8,3.1,.12,jGlass,jx-6.3,10.0,jFront-.25);box(5.8,3.1,.12,jGlass,jx+6.3,10.0,jFront-.25);
+ const jc=document.createElement('canvas');jc.width=640;jc.height=150;const jctx=jc.getContext('2d');jctx.fillStyle='#174e50';jctx.fillRect(0,0,640,150);jctx.fillStyle='#f6d36d';jctx.font='bold 78px Arial';jctx.textAlign='center';jctx.fillText('JEWELLERY',320,102);
+ const jSign=new THREE.Mesh(new THREE.PlaneGeometry(11,2.5),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(jc)}));jSign.position.set(jx,12.0,jFront-.3);scene.add(jSign);
+ // Front retail display and cashier counter.
+ box(6.8,1.15,1.25,mat(0x684a36),jx,1.05,jz-2.0);box(6.8,.12,1.3,jGold,jx,1.68,jz-2.0);
+ const jewelDisplayMats=[mat(0xd83c49),mat(0xf0c84a),mat(0xd8e0e8),mat(0xb77a42),mat(0x38a5ad)];
+ for(let i=0;i<5;i++){const gem=new THREE.Mesh(new THREE.IcosahedronGeometry(.34,1),jewelDisplayMats[i]);gem.position.set(jx-2.7+i*1.35,2.18,jz-2.0);gem.castShadow=true;scene.add(gem);}
+ // No NPC is placed in the jewellery; the player manages the counter.
+ // Staircase at the right wall and an upper-floor workbench.
+ for(let st=0;st<12;st++){const step=box(2.6,.24,.78,mat(0x98754a),jx+6.6,0.42+st*.58,jz+3.6-st*.62);step.rotation.x=-.10;}
+ box(4,.2,1.5,mat(0x76513b),jx+2.6,7.72,jz+1.5);box(.16,1.0,.16,jGold,jx+1.0,7.2,jz+1.5);box(.16,1.0,.16,jGold,jx+4.2,7.2,jz+1.5);
+ for(let q=0;q<2;q++){const pearl=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),mat(0xf4eee1));pearl.position.set(jx+2.1+q*.9,7.98,jz+1.5);scene.add(pearl);}
+ const jewelrySolids=[
+   {minX:jx-18.85,maxX:jx-17.85,minZ:jz-15,maxZ:jz+15},
+   {minX:jx+17.85,maxX:jx+18.85,minZ:jz-15,maxZ:jz+15},
+   {minX:jx-18.35,maxX:jx+18.35,minZ:jz+14.5,maxZ:jz+15.5},
+   {minX:jx-18.35,maxX:jx-4,minZ:jFront-.5,maxZ:jFront+.5},
+   {minX:jx+4,maxX:jx+18.35,minZ:jFront-.5,maxZ:jFront+.5}
+ ];
+ solidRects.push(...jewelrySolids);
+ // Solid collision volume for the retail counter; no walking through its body.
+ solidRects.push({minX:jx-3.55,maxX:jx+3.55,minZ:jz-2.72,maxZ:jz-1.28});
+ // Distinct upper-floor marker on the city facade.
+ const upMark=box(2.2,.18,.18,jGold,jx+6.6,7.35,jz+3.1);
+
+
+ // Remote farm district: wheat field, chicken coop and milk canister.
+ const farmX=-112,farmZ=-108,farmGreen=mat(0x66834b),farmWood=mat(0x805432),farmGold=mat(0xc8a64b);
+ box(38,.18,32,farmGreen,farmX,.08,farmZ);
+ // Dirt access lane from the city toward the farm.
+ const farmRoad=box(6,.08,48,mat(0x9b805b),-96,.12,-92);farmRoad.rotation.y=-Math.PI/4;
+ // Field rows and mature wheat stalks.
+ for(let row=0;row<4;row++)for(let col=0;col<6;col++){
+   const x=farmX-13+col*4.2,z=farmZ-9+row*5;
+   box(3.3,.06,3.5,mat(0x795b32),x,.22,z);
+   for(let n=0;n<4;n++){const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.035,.05,1.0,5),farmGold);stalk.position.set(x-1+n*.55,.78,z+(n%2)*.45);scene.add(stalk);const head=new THREE.Mesh(new THREE.SphereGeometry(.13,6,5),farmGold);head.position.set(x-1+n*.55,1.32,z+(n%2)*.45);scene.add(head);}
+ }
+ // Enclosed chicken house with a doorway; solid walls block the avatar.
+ const coopX=farmX+13,coopZ=farmZ-5,coopWall=mat(0x9a704b),coopRoof=mat(0x9d3930);
+ box(9,.25,7,coopWall,coopX,.18,coopZ);box(9.5,.35,7.5,coopRoof,coopX,3.55,coopZ);
+ box(9,3,.32,coopWall,coopX,1.65,coopZ+3.35);
+ box(.32,3,6.7,coopWall,coopX-4.35,1.65,coopZ);box(.32,3,6.7,coopWall,coopX+4.35,1.65,coopZ);
+ box(3,3,.32,coopWall,coopX-3,1.65,coopZ-3.35);box(3,3,.32,coopWall,coopX+3,1.65,coopZ-3.35);
+ solidRects.push(
+ {minX:coopX-4.65,maxX:coopX-4.05,minZ:coopZ-3.5,maxZ:coopZ+3.5},
+ {minX:coopX+4.05,maxX:coopX+4.65,minZ:coopZ-3.5,maxZ:coopZ+3.5},
+ {minX:coopX-4.5,maxX:coopX+4.5,minZ:coopZ+3.05,maxZ:coopZ+3.65},
+ {minX:coopX-4.5,maxX:coopX-1.35,minZ:coopZ-3.65,maxZ:coopZ-3.05},
+ {minX:coopX+1.35,maxX:coopX+4.5,minZ:coopZ-3.65,maxZ:coopZ-3.05});
+ for(let n=0;n<3;n++){const hen=new THREE.Mesh(new THREE.SphereGeometry(.42,10,8),mat(0xf2e5ca));hen.position.set(farmX+10.5+n*2.2,.55,farmZ-5);scene.add(hen);}
+ // Milk storage can with four visible level bands.
+ const milkCan=new THREE.Mesh(new THREE.CylinderGeometry(1.25,1.05,3.4,16),mat(0xd6dce0));milkCan.position.set(farmX+13,1.7,farmZ+7);milkCan.castShadow=true;scene.add(milkCan);
+ const milkLid=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.18,16),mat(0x66727b));milkLid.position.set(farmX+13,3.48,farmZ+7);scene.add(milkLid);
+ const farmSignCanvas=document.createElement('canvas');farmSignCanvas.width=500;farmSignCanvas.height=120;const farmCtx=farmSignCanvas.getContext('2d');farmCtx.fillStyle='#426c35';farmCtx.fillRect(0,0,500,120);farmCtx.fillStyle='#fff4d5';farmCtx.font='bold 60px Arial';farmCtx.textAlign='center';farmCtx.fillText('FARM',250,82);
+ const farmSign=new THREE.Mesh(new THREE.PlaneGeometry(8,1.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(farmSignCanvas)}));farmSign.position.set(farmX,5,farmZ-15);scene.add(farmSign);
+ const farmStock={wheat:6,egg:4,milk:4},farmTimers={wheat:0,egg:0,milk:0};
+
+ // Modern fuel station with a connected repair workshop.
+ const fuelX=90,fuelZ=-60,mechanicX=108,mechanicZ=-60;
+ const fuelFloor=mat(0x858b91),fuelRed=mat(0xd83b32),fuelBlue=mat(0x1974a8),fuelWhite=mat(0xe9edf0),fuelDark=mat(0x303943);
+ box(17,.22,15,fuelFloor,fuelX,.14,fuelZ);
+ // canopy, colored fascia and bright support columns
+ box(18,.42,15,fuelWhite,fuelX,5.2,fuelZ);box(18,.28,1.0,fuelRed,fuelX,5.0,fuelZ-7.1);box(18,.28,1.0,fuelBlue,fuelX,5.0,fuelZ+7.1);
+ for(const dx of [-7.3,7.3])for(const dz of [-5.8,5.8]){const col=box(.42,5,.42,fuelWhite,fuelX+dx,2.6,fuelZ+dz);}
+ for(let i=0;i<2;i++){const px=fuelX-3+i*6;box(1.15,1.8,.85,fuelRed,px,1.0,fuelZ);solidCircles.push({x:px,z:fuelZ,r:.7});box(.88,.72,.08,fuelDark,px,1.65,fuelZ-.46);box(.13,.65,.12,fuelWhite,px+.42,1.65,fuelZ-.5);}
+ const fuelSignCanvas=document.createElement('canvas');fuelSignCanvas.width=500;fuelSignCanvas.height=120;const fuelSignCtx=fuelSignCanvas.getContext('2d');fuelSignCtx.fillStyle='#d83b32';fuelSignCtx.fillRect(0,0,500,120);fuelSignCtx.fillStyle='white';fuelSignCtx.font='bold 58px Arial';fuelSignCtx.textAlign='center';fuelSignCtx.fillText('FUEL STATION',250,80);const fuelSign=new THREE.Mesh(new THREE.PlaneGeometry(8,1.9),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(fuelSignCanvas)}));fuelSign.position.set(fuelX,4.1,fuelZ-7.62);scene.add(fuelSign);
+ // Attached mechanic workshop, with open service bay.
+ box(17,.25,15,mat(0xb9b6ad),mechanicX,.17,mechanicZ);box(17,.4,15,fuelBlue,mechanicX,6.1,mechanicZ);
+ box(17,5.5,.45,fuelWhite,mechanicX,2.85,mechanicZ+7.3);box(.45,5.5,15,fuelWhite,mechanicX-8.3,2.85,mechanicZ);box(.45,5.5,15,fuelWhite,mechanicX+8.3,2.85,mechanicZ);box(5.6,5.5,.45,fuelWhite,mechanicX-5.7,2.85,mechanicZ-7.3);box(5.6,5.5,.45,fuelWhite,mechanicX+5.7,2.85,mechanicZ-7.3);
+ box(7,.18,1.2,fuelDark,mechanicX,1.05,mechanicZ+1.2);box(7,.12,1.2,fuelRed,mechanicX,1.62,mechanicZ+1.2);
+ const mechSignCanvas=document.createElement('canvas');mechSignCanvas.width=400;mechSignCanvas.height=100;const mechCtx=mechSignCanvas.getContext('2d');mechCtx.fillStyle='#1974a8';mechCtx.fillRect(0,0,400,100);mechCtx.fillStyle='white';mechCtx.font='bold 48px Arial';mechCtx.textAlign='center';mechCtx.fillText('MECHANIC',200,68);const mechSign=new THREE.Mesh(new THREE.PlaneGeometry(7,1.7),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(mechSignCanvas)}));mechSign.position.set(mechanicX,5.1,mechanicZ-7.58);scene.add(mechSign);
+ // Collision boundaries for the workshop walls and safe vehicle/pedestrian access lanes.
+ solidRects.push({minX:mechanicX-8.7,maxX:mechanicX-8.1,minZ:mechanicZ-7.5,maxZ:mechanicZ+7.5},{minX:mechanicX+8.1,maxX:mechanicX+8.7,minZ:mechanicZ-7.5,maxZ:mechanicZ+7.5},{minX:mechanicX-8.5,maxX:mechanicX+8.5,minZ:mechanicZ+7.0,maxZ:mechanicZ+7.6},{minX:mechanicX-8.5,maxX:mechanicX-2.8,minZ:mechanicZ-7.6,maxZ:mechanicZ-7.0},{minX:mechanicX+2.8,maxX:mechanicX+8.5,minZ:mechanicZ-7.6,maxZ:mechanicZ-7.0});
+ const fuelApproach={x:fuelX,z:fuelZ-9.5},mechanicApproach={x:mechanicX,z:mechanicZ-9.5};
+ // Blue P signs mark inactive vehicle parking spots; matching P symbols appear on the map.
+ for(const pp of parkingSigns){
+   const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,2.2,8),mat(0x4b535a));pole.position.set(pp.x,1.1,pp.z);scene.add(pole);
+   const board=new THREE.Mesh(new THREE.BoxGeometry(1.05,1.05,.12),mat(0x1765b0));board.position.set(pp.x,2.35,pp.z);scene.add(board);
+   const pc=document.createElement('canvas');pc.width=128;pc.height=128;const px=pc.getContext('2d');px.fillStyle='white';px.font='bold 100px Arial';px.textAlign='center';px.textBaseline='middle';px.fillText('P',64,67);
+   const pm=new THREE.Mesh(new THREE.PlaneGeometry(.78,.78),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(pc),transparent:true}));pm.position.set(pp.x,2.35,pp.z-.071);scene.add(pm);
+ }
+  const bx=20,bz=-20,bakeryFront=bz-6.7;
+  // Define protected building footprints BEFORE lamps/trees query them.
+  const protectedAreas=[{x:mx,z:mz,w:22,d:19},{x:bx,z:bz,w:21,d:17},{x:jx,z:jz,w:39,d:32},{x:bankX,z:bankZ,w:22,d:19},{x:rx,z:rz,w:22,d:19},{x:kx,z:kz,w:10,d:8}];
+  function insideProtected(x,z,pad=1){return protectedAreas.some(a=>Math.abs(x-a.x)<a.w/2+pad&&Math.abs(z-a.z)<a.d/2+pad);}
+  // Street lamps and planted green strips along sidewalks
+ const lampPole=mat(0x303944), lampGlow=new THREE.MeshStandardMaterial({color:0xffefbd,emissive:0xffd98a,emissiveIntensity:1.3});
+ for(let p=-80;p<=80;p+=40)for(let k=-90;k<=90;k+=30){
+   for(const side of [-1,1]){
+     const lx=p+side*9.05,lz=k;
+     if(insideProtected(lx,lz,2))continue;
+     solidCircles.push({x:lx,z:lz,r:0.58});
+     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.09,.13,4.2,8),lampPole);pole.position.set(lx,2.1,lz);scene.add(pole);
+     const arm=box(.9,.1,.1,lampPole,lx+side*.38,4.05,lz);
+     const bulb=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),lampGlow);bulb.position.set(lx+side*.75,3.95,lz);scene.add(bulb);
+   }
+ }
+ // Bakery: enclosed room with a real open entrance, oven and work counter.
+
+ box(17,.25,13,mat(0xe9d7ba),bx,.18,bz);
+ box(17.8,.5,13.8,mat(0x9e382e),bx,7.75,bz); // bakery roof
+ const bakeryWall=mat(0xf0d9b2),bakeryTrim=mat(0x9e382e);
+ box(17,7.5,.45,bakeryWall,bx,3.8,bz+6.5);
+ box(.45,7.5,13,bakeryWall,bx-8.5,3.8,bz);box(.45,7.5,13,bakeryWall,bx+8.5,3.8,bz);
+ box(6.3,7.5,.45,bakeryWall,bx-5.35,3.8,bakeryFront);box(6.3,7.5,.45,bakeryWall,bx+5.35,3.8,bakeryFront);
+ box(17,.45,.6,bakeryTrim,bx,7.65,bz+6.5);
+ const cv=document.createElement('canvas');cv.width=512;cv.height=128;const ctx=cv.getContext('2d');ctx.fillStyle='#8f3028';ctx.fillRect(0,0,512,128);ctx.fillStyle='#fff2c8';ctx.font='bold 64px Arial';ctx.textAlign='center';ctx.fillText('BAKERY',256,86);
+ const signMesh=new THREE.Mesh(new THREE.PlaneGeometry(8,2),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv)}));signMesh.position.set(bx,7.1,bakeryFront-.28);scene.add(signMesh);
+ // Front windows
+ box(3.8,2.2,.12,mat(0x77c4df,.25),bx-6.9,4.1,bakeryFront-.28);box(3.8,2.2,.12,mat(0x77c4df,.25),bx+6.9,4.1,bakeryFront-.28);
+ // Oven and glowing opening
+ const ovenMat=mat(0x765247),ovenGlow=new THREE.MeshStandardMaterial({color:0xff8a32,emissive:0xff4a12,emissiveIntensity:1.2});
+ box(3.4,2.6,2.4,ovenMat,bx,1.45,bz+3.4);box(1.9,1.2,.12,ovenGlow,bx,1.65,bz+2.17);box(3.8,.18,2.8,mat(0x4b3933),bx,2.85,bz+3.4);
+ // Kneading/work table
+ box(4.2,.18,1.7,mat(0x9a704a),bx,1.1,bz-1.2);box(.18,1.05,.18,ovenMat,bx-1.7,.55,bz-1.2);box(.18,1.05,.18,ovenMat,bx+1.7,.55,bz-1.2);
+ const bakerySolids=[{minX:bx-8.8,maxX:bx-8.2,minZ:bz-6.5,maxZ:bz+6.5},{minX:bx+8.2,maxX:bx+8.8,minZ:bz-6.5,maxZ:bz+6.5},{minX:bx-8.5,maxX:bx+8.5,minZ:bz+6.2,maxZ:bz+6.9},{minX:bx-8.5,maxX:bx-2.2,minZ:bakeryFront-.5,maxZ:bakeryFront+.5},{minX:bx+2.2,maxX:bx+8.5,minZ:bakeryFront-.5,maxZ:bakeryFront+.5},{minX:bx-2.2,maxX:bx+2.2,minZ:bz+2.2,maxZ:bz+4.6}];
+ solidRects.push(...bakerySolids);
+ // Trees are placed ONLY on sidewalk strips, never on asphalt or in building footprints.
+ const trunk=mat(0x765033),leaf=mat(0x397b46);
+ const treePositions=[];
+
+ for(let p=-80;p<=80;p+=40){
+   for(const side of [-1,1]){
+     for(let k=-100;k<=100;k+=20){
+       // Avoid the crossing zones where sidewalks are intentionally open.
+       if(Math.abs(k%40)===0) continue;
+       const x=p+side*9.15, z=k;
+       if(insideProtected(x,z,2))continue;
+       // Keep trees separated from lamps and from each other.
+       if(solidCircles.some(o=>Math.hypot(o.x-x,o.z-z)<3.2)) continue;
+       if(treePositions.some(o=>Math.hypot(o.x-x,o.z-z)<3.2)) continue;
+       treePositions.push({x,z}); solidCircles.push({x,z,r:0.78});
+     }
+   }
+ }
+ for(const pos of treePositions){
+   const t=new THREE.Mesh(new THREE.CylinderGeometry(.22,.32,2.2,8),trunk);t.position.set(pos.x,1.1,pos.z);t.castShadow=true;scene.add(t);
+   // Visible branches plus several overlapping leaf clusters prevent bare-trunk trees.
+   for(const a of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+     const branch=new THREE.Mesh(new THREE.CylinderGeometry(.065,.12,1.05,6),trunk);
+     branch.position.set(pos.x+Math.cos(a)*.48,2.15,pos.z+Math.sin(a)*.48);
+     branch.rotation.z=-Math.cos(a)*.72;branch.rotation.x=Math.sin(a)*.72;branch.castShadow=true;scene.add(branch);
+   }
+   for(const [dx,dy,dz,r] of [[0,3.15,0,1.25],[-.78,2.85,.12,.82],[.72,2.9,-.12,.88],[.08,3.85,.12,.86]]){
+     const crown=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),leaf);crown.position.set(pos.x+dx,dy,pos.z+dz);crown.castShadow=true;scene.add(crown);
+   }
+ }
+ // Sidewalk furniture: benches and rubbish bins, never placed on asphalt.
+ const benchWood=mat(0x875b38),benchMetal=mat(0x3b4650),binMat=mat(0x347b69); const benchRecords=[];
+ for(let p=-80;p<=80;p+=40){for(const side of [-1,1]){for(let k=-70;k<=70;k+=35){
+   const bx2=p+side*9.15,bz2=k+8;
+   // Keep the entire bench on the sidewalk and away from perpendicular road crossings.
+   const crossDist=Math.abs((((bz2+20)%40)+40)%40-20);
+   if(crossDist<9.5)continue;
+   // avoid reserved building entrances and tree trunks
+   if(Math.abs(bx2-kx)<5&&Math.abs(bz2-kz)<7)continue;
+   if(Math.abs(bx2-rx)<6&&Math.abs(bz2-rz)<8)continue;
+   if(insideProtected(bx2,bz2,1))continue;
+   if(solidCircles.some(o=>Math.hypot(o.x-bx2,o.z-bz2)<2.8))continue;
+   box(1.8,.18,.55,benchWood,bx2,.85,bz2);box(1.8,.85,.15,benchWood,bx2,1.25,bz2+.25);benchRecords.push({x:bx2,z:bz2,yaw:side>0?Math.PI/2:-Math.PI/2});
+   for(const dx of [-.7,.7])box(.12,.75,.12,benchMetal,bx2+dx,.43,bz2);
+   solidRects.push({minX:bx2-1.05,maxX:bx2+1.05,minZ:bz2-.55,maxZ:bz2+.55});
+   const tx=bx2+side*1.5,tz=bz2+1.1;
+   const bin=new THREE.Mesh(new THREE.CylinderGeometry(.32,.28,.9,10),binMat);bin.position.set(tx,.55,tz);scene.add(bin);
+   solidCircles.push({x:tx,z:tz,r:.48});
+ }}}
+ // Additional guaranteed benches on sidewalk segments, clear of road crossings.
+ for(const x of [-49.15,-9.15,30.85,70.85])for(const z of [-30,10,50,90]){
+   if(treePositions.some(o=>Math.hypot(o.x-x,o.z-z)<2.2))continue;
+   if(insideProtected(x,z,1))continue;
+   box(1.9,.18,.58,benchWood,x,.88,z);box(1.9,.82,.16,benchWood,x,1.28,z+.24);benchRecords.push({x,z,yaw:Math.PI});
+   for(const dx of [-.72,.72])box(.13,.72,.13,benchMetal,x+dx,.43,z);
+   solidRects.push({minX:x-1.08,maxX:x+1.08,minZ:z-.58,maxZ:z+.58});
+ }
+ // No vehicles in this city build.
+ // Richer landmark presentation: colored facade bands, entrance pillars, warm lamps and planters.
+ function decorateLandmark(cx,cz,w,d,accent){
+   const trim=mat(accent,.42),dark=mat(0x273747),lampMat=new THREE.MeshStandardMaterial({color:0xffe3a0,emissive:0xffbd54,emissiveIntensity:1.25});
+   box(w+.8,.24,.42,trim,cx,7.95,cz-d/2-.28);box(.42,.24,d+.8,trim,cx-w/2-.28,7.95,cz);box(.42,.24,d+.8,trim,cx+w/2+.28,7.95,cz);
+   for(const side of [-1,1]){box(.42,5.5,.5,trim,cx+side*(w*.38),2.8,cz-d/2-.45);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),lampMat);lamp.position.set(cx+side*(w*.38),5.8,cz-d/2-.8);scene.add(lamp);}
+   for(const side of [-1,1]){const pot=new THREE.Mesh(new THREE.CylinderGeometry(.42,.34,.55,10),dark);pot.position.set(cx+side*(w*.42),.48,cz-d/2-1.6);scene.add(pot);const plant=new THREE.Mesh(new THREE.SphereGeometry(.55,10,8),mat(0x3e9254));plant.position.set(cx+side*(w*.42),1.05,cz-d/2-1.6);scene.add(plant);}
+ }
+ decorateLandmark(mx,mz,storeW,storeD,0x2bb58b);decorateLandmark(rx,rz,18,15,0x3c83b8);decorateLandmark(bankX,bankZ,18,15,0xd9b34a);decorateLandmark(bx,bz,18,15,0xd97735);decorateLandmark(jx,jz,36.7,30,0xe1b84d);
+ // Gas station and mechanic get brighter branded accents.
+ for(const [cx,cz,accent] of [[fuelX,fuelZ,0xe44a40],[mechanicX,mechanicZ,0x3b9bd0]]){box(15,.22,.35,mat(accent),cx,5.48,cz-7.3);}
+ // player simple stylized character
+ const player=new THREE.Group();scene.add(player);
+ const skin=mat(0xe5b88d), shirt=mat(0x2465a6), pants=mat(0x263447), shoe=mat(0x20242a);
+ const torso=new THREE.Mesh(new THREE.BoxGeometry(.9,1.15,.48),shirt);torso.position.y=1.65;torso.castShadow=true;player.add(torso);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.34,16,12),skin);head.position.y=2.48;head.castShadow=true;player.add(head);
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.35,12,8,0,Math.PI*2,0,Math.PI/2),mat(0x34251e));hair.position.y=2.58;player.add(hair);
+ const limbs={legs:[],arms:[]};
+ for(const x of [-.25,.25]){
+   const legGroup=new THREE.Group();legGroup.position.set(x,1.12,0);player.add(legGroup);
+   const leg=new THREE.Mesh(new THREE.BoxGeometry(.3,.85,.34),pants);leg.position.y=-.42;leg.castShadow=true;legGroup.add(leg);
+   const foot=new THREE.Mesh(new THREE.BoxGeometry(.34,.18,.52),shoe);foot.position.set(0,-.86,-.07);legGroup.add(foot);limbs.legs.push(legGroup);
+   const armGroup=new THREE.Group();armGroup.position.set(x*2,2.05,0);player.add(armGroup);
+   const arm=new THREE.Mesh(new THREE.BoxGeometry(.25,.9,.28),skin);arm.position.y=-.43;arm.castShadow=true;armGroup.add(arm);limbs.arms.push(armGroup);
+ }
+ player.position.set(0,0,12);
+ function safeGet(key){try{return window.localStorage.getItem(key)||'';}catch(e){return '';}}function safeSet(key,value){try{window.localStorage.setItem(key,value);}catch(e){}}
+ let playerName=safeGet('lifeCityPlayerName');
+ const playerId=safeGet('lifeCityPlayerId')||('LC-'+Math.random().toString(36).slice(2,8).toUpperCase());safeSet('lifeCityPlayerId',playerId);
+ let selectedAvatar=safeGet('lifeCityAvatar')||'boy';
+ const nameCanvas=document.createElement('canvas');nameCanvas.width=512;nameCanvas.height=128;const nameCtx=nameCanvas.getContext('2d');
+ const nameTexture=new THREE.CanvasTexture(nameCanvas);const nameSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:nameTexture,transparent:true,depthTest:false}));nameSprite.scale.set(2.6,.65,1);nameSprite.position.set(0,3.35,0);player.add(nameSprite);
+ function refreshNameTag(){nameCtx.clearRect(0,0,512,128);if(playerName){nameCtx.fillStyle='rgba(12,25,40,.86)';nameCtx.fillRect(35,10,442,108);nameCtx.fillStyle='#fff';nameCtx.font='bold 48px Tahoma,Arial';nameCtx.textAlign='center';nameCtx.textBaseline='middle';nameCtx.fillText(playerName,256,48);nameCtx.fillStyle='#b9d9f3';nameCtx.font='bold 22px Arial';nameCtx.fillText(playerId,256,91);nameTexture.needsUpdate=true;nameSprite.visible=true;}else{nameSprite.visible=false;}}
+
+ refreshNameTag();
+ const avatarSVG={boy:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#8ee0ff"/><stop offset="1" stop-color="#244b83"/></linearGradient></defs><rect width="100" height="100" rx="18" fill="url(#b)"/><path d="M12 100Q17 65 50 66Q83 65 88 100" fill="#f1f3f5"/><path d="M32 73L50 91 68 73 62 100H38Z" fill="#2b6396"/><ellipse cx="50" cy="42" rx="23" ry="27" fill="#d99c72"/><path d="M27 39Q24 8 52 12Q78 13 74 43L66 30Q50 37 32 27Z" fill="#34251f"/><circle cx="42" cy="43" r="2.5" fill="#222"/><circle cx="59" cy="43" r="2.5" fill="#222"/><path d="M43 56Q50 62 58 55" stroke="#783f35" stroke-width="2.5" fill="none"/></svg>',girl:'<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x2="0" y2="1"><stop stop-color="#ffc2dc"/><stop offset="1" stop-color="#78458e"/></linearGradient></defs><rect width="100" height="100" rx="18" fill="url(#g)"/><path d="M12 100Q17 65 50 66Q83 65 88 100" fill="#f6e8f2"/><path d="M27 37Q19 9 49 10Q83 9 76 48L73 78 27 78Z" fill="#4a273c"/><ellipse cx="50" cy="43" rx="21" ry="26" fill="#e8b18f"/><path d="M28 35Q28 12 52 15Q70 15 73 36Q56 26 42 29Z" fill="#4a273c"/><circle cx="42" cy="44" r="2.5" fill="#222"/><circle cx="58" cy="44" r="2.5" fill="#222"/><path d="M43 56Q50 62 57 56" stroke="#9b4c60" stroke-width="2.5" fill="none"/><path d="M35 70L50 88 65 70 70 100H30Z" fill="#bd4d88"/></svg>'};
+ function refreshProfile(){const n=playerName||'بدون نام';document.getElementById('profileName').textContent=n;document.getElementById('profileId').textContent='شناسه: '+playerId;const av=document.getElementById('profileAvatarPreview');av.innerHTML=avatarSVG[selectedAvatar]||avatarSVG.boy;document.querySelectorAll('.avatarChoice').forEach(b=>{b.classList.toggle('selected',b.dataset.avatar===selectedAvatar);const art=b.querySelector('.avatarArt');if(art)art.innerHTML=avatarSVG[b.dataset.avatar]||avatarSVG.boy;});}
+ refreshProfile();
+ // First vehicle: a stylized yellow open-cab tractor inspired by the supplied reference.
+ const tractor=new THREE.Group();scene.add(tractor);tractor.visible=false;
+ const tractorYellow=mat(0xf2c400,.48),tractorDark=mat(0x202329,.78),tractorMetal=mat(0x9ba3aa,.4),tractorGlass=mat(0x252a30,.5);
+ function tbox(w,h,d,m,x,y,z){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;tractor.add(o);return o;}
+ tbox(2.15,.72,3.05,tractorYellow,0,1.65,-.15); // bonnet
+ tbox(1.95,.65,1.2,tractorDark,0,1.18,-1.55); // engine
+ tbox(1.25,.5,1.2,tractorYellow,0,2.02,1.0); // rear body
+ tbox(1.05,.18,1.05,tractorDark,0,1.15,.65); // chassis
+ // front grille and headlights
+ tbox(1.48,.88,.12,tractorDark,0,1.55,-1.72);
+ for(let x of [-.48,.48]){tbox(.34,.28,.08,mat(0xf5f2df),x,1.25,-1.80);}
+ for(let x of [-.86,.86]){tbox(.12,1.18,2.0,tractorYellow,x,1.55,1.12);tbox(.16,.12,2.05,tractorYellow,x,2.12,1.12);tbox(.22,.16,2.35,tractorYellow,x*1.15,2.02,1.12);tbox(.16,.12,.18,tractorMetal,x*1.15,2.18,.05);}
+ // seat, steering wheel, exhaust and steps
+ tbox(.72,.18,.7,tractorDark,0,2.05,.38);tbox(.68,.85,.18,tractorDark,0,2.48,.68);
+ const steering=new THREE.Mesh(new THREE.TorusGeometry(.38,.055,8,24),tractorDark);steering.position.set(0,2.18,-.48);steering.rotation.x=1.05;tractor.add(steering);
+ const exhaust=new THREE.Mesh(new THREE.CylinderGeometry(.09,.12,.95,10),tractorDark);exhaust.position.set(-.62,2.65,-1.0);tractor.add(exhaust);
+ const exhaustTop=new THREE.Mesh(new THREE.CylinderGeometry(.13,.09,.16,10),tractorMetal);exhaustTop.position.set(-.62,3.17,-1.0);tractor.add(exhaustTop);
+ for(let x of [-.72,.72])tbox(.12,.65,.75,tractorMetal,x,1.18,.1);
+ const tractorWheels=[];
+ function tractorWheel(x,z,r,width){const pivot=new THREE.Group();pivot.position.set(x,r,z);tractor.add(pivot);
+   const tire=new THREE.Mesh(new THREE.CylinderGeometry(r,r,width,18),tractorDark);tire.rotation.z=Math.PI/2;tire.castShadow=true;pivot.add(tire);
+   const rim=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,width+.025,18),tractorMetal);rim.rotation.z=Math.PI/2;pivot.add(rim);
+   const hub=new THREE.Mesh(new THREE.CylinderGeometry(r*.22,r*.22,width+.05,16),tractorDark);hub.rotation.z=Math.PI/2;pivot.add(hub);
+   for(let k=0;k<16;k++){const a=k*Math.PI/8;const lug=new THREE.Mesh(new THREE.BoxGeometry(width+.06,.16,.28),tractorDark);lug.position.set(0,Math.cos(a)*r*.86,Math.sin(a)*r*.86);lug.rotation.x=a;pivot.add(lug);}
+   tractorWheels.push({pivot,r,z,front:z<0});
+ }
+ for(let x of [-1.05,1.05]){tractorWheel(x,-1.15,.55,.34);tractorWheel(x,1.15,.88,.48);}
+ // Extra low-poly details: front bumper, grille bars, mirrors, rear lights and wheel guards.
+ tbox(1.8,.22,.28,tractorDark,0,.98,-1.82);for(let y of [1.34,1.48,1.62,1.76])tbox(1.18,.035,.035,tractorMetal,0,y,-1.80);
+ for(let x of [-.48,.48]){tbox(.12,.08,.1,mat(0xffd86a),x,1.42,-1.88);tbox(.12,.08,.1,mat(0xff4438),x,1.95,1.9);}
+ for(let x of [-.92,.92]){const arm=tbox(.055,.62,.055,tractorMetal,x,2.38,-.18);const mirror=tbox(.28,.2,.12,tractorDark,x*1.28,2.68,-.18);}
+ tbox(1.35,.12,.12,tractorMetal,0,1.02,1.88);
+ let driving=false,vehicleSpeed=0,vehicleYaw=0,gear=0,gasOn=false,brakeOn=false,clutchOn=false,steer=0,tractorFuel=100,tractorPower=100,lastVehicleImpact=0;
+
+ // Collision checks use the character's ground footprint. Axis-by-axis movement allows sliding along walls.
+ let inStore=false, inRegistry=false, jewelryFloor=0;
+ function blockedAt(x,z){
+   const r=.48;
+   for(const b of solidRects){if(x+r>b.minX&&x-r<b.maxX&&z+r>b.minZ&&z-r<b.maxZ)return true;}
+   if(inStore)for(const b of storeSolids){if(x+r>b.minX&&x-r<b.maxX&&z+r>b.minZ&&z-r<b.maxZ)return true;}
+   if(!inStore)for(const o of solidCircles){if(Math.hypot(x-o.x,z-o.z)<o.r+r)return true;}
+   return false;
+ }
+ function vehicleBlockedAt(x,z){
+   // Sample the tractor's four corners and sides so its full body cannot clip through obstacles.
+   const fwd=new THREE.Vector3(-Math.sin(vehicleYaw),0,-Math.cos(vehicleYaw));
+   const right=new THREE.Vector3(Math.cos(vehicleYaw),0,-Math.sin(vehicleYaw));
+   for(const a of [-1.25,0,1.25])for(const b of [-2.05,0,2.05]){
+     const px=x+right.x*a+fwd.x*b,pz=z+right.z*a+fwd.z*b;
+     if(blockedAt(px,pz))return true;
+   }
+   return false;
+ }
+
+ // Economy, inventory, food energy, stars and level progression.
+ const foods=[
+   {id:'water',name:'آب',emoji:'💧',energy:1,price:3,stock:99},
+   {id:'wheat',name:'گندم',emoji:'🌾',energy:0,price:0,stock:99,edible:false},
+   {id:'stone',name:'سنگ',emoji:'🪨',energy:0,price:0,stock:99,edible:false},
+   {id:'egg',name:'تخم‌مرغ',emoji:'🥚',energy:0,price:8,stock:99,edible:false},
+   {id:'tea',name:'چای',emoji:'🍵',energy:8,price:80,stock:99},
+   {id:'puff',name:'پفک',emoji:'🧀',energy:3,price:20,stock:99},
+   {id:'chips',name:'چیپس',emoji:'🥔',energy:5,price:30,stock:99},
+   {id:'milk',name:'شیر',emoji:'🥛',energy:2,price:10,stock:99},
+   {id:'flour',name:'آرد',emoji:'🌾',energy:0,price:12,stock:99,edible:false},
+   {id:'sangak',name:'نان سنگک',emoji:'🥖',energy:4,price:25,stock:99},
+   {id:'barbari',name:'نان بربری',emoji:'🥯',energy:6,price:30,stock:99},
+    {id:'lavash',name:'نان لواش',emoji:'🫓',energy:2,price:15,stock:99},
+   {id:'pearl',name:'مروارید',emoji:'⚪',energy:0,price:2300,stock:99,edible:false,jewelry:true},
+   {id:'goldenEgg',name:'تخم طلا',emoji:'🥚',energy:0,price:2900,stock:99,edible:false,jewelry:true},
+   {id:'goldStone',name:'سنگ طلا',emoji:'🪨',energy:0,price:2700,stock:99,edible:false,jewelry:true},
+   {id:'gold',name:'طلا',emoji:'🟡',energy:0,price:1500,stock:99,edible:false,jewelry:true},
+   {id:'ingot',name:'شمش',emoji:'🪙',energy:0,price:1350,stock:99,edible:false,jewelry:true},
+   {id:'silver',name:'نقره',emoji:'⚪',energy:0,price:850,stock:99,edible:false,jewelry:true},
+   {id:'bronze',name:'برنز',emoji:'🟤',energy:0,price:400,stock:99,edible:false,jewelry:true},
+   {id:'necklace',name:'گردنبند',emoji:'📿',energy:0,price:6400,stock:99,edible:false,jewelry:true}
+ ];
+ const kioskFoods=['water','puff','chips','flour'];
+ const inventory={water:1,egg:1,tea:1,puff:1,chips:1,milk:1,flour:3,wheat:0,stone:3,pearl:0,goldenEgg:0,goldStone:0,gold:0,ingot:0,silver:0,bronze:0,necklace:0};
+ let coins=2000,gems=50,stars=0,level=1,energy=5,currentShop='super',buyAnimUntil=0,salary=0,sellerActive={super:false,bakery:false,jewelry:false};
+ const levelGoals=[20,100,500,1000,1500,2500,4000,6500,8000,10000];
+ const energyText=document.getElementById('energyText'),energyFill=document.getElementById('energyFill');
+ const toFa=n=>String(n).replace(/[0-9]/g,d=>'۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+ function updateHUD(){energyText.textContent=toFa(energy)+' / ۱۰';energyFill.style.width=(energy*10)+'%';document.getElementById('coinText').textContent=toFa(coins);document.getElementById('gemText').textContent=toFa(gems);document.getElementById('starsText').textContent=toFa(stars);document.getElementById('levelText').textContent=toFa(level);document.getElementById('salaryText').textContent=toFa(salary);}
+ function updateLevel(){while(level<10 && stars>=levelGoals[level-1])level++;updateHUD();}
+ function renderInventory(){
+   const list=document.getElementById('inventoryList');list.innerHTML='';
+   foods.forEach(f=>{const row=document.createElement('div');row.className='itemRow';
+     const title=document.createElement('span');title.textContent=f.emoji+' '+f.name+' ';const qty=document.createElement('small');qty.textContent='تعداد: '+toFa(inventory[f.id]);title.appendChild(qty);row.appendChild(title);
+     const btn=document.createElement('button');btn.textContent=f.edible===false?'غیرخوراکی':'مصرف';btn.disabled=f.edible===false||inventory[f.id]<=0||energy>=10;btn.style.opacity=btn.disabled?'.45':'1';
+     btn.addEventListener('click',()=>{if(f.edible===false||inventory[f.id]<=0||energy>=10)return;inventory[f.id]--;energy=Math.min(10,energy+f.energy);stars+=f.energy/2;updateLevel();renderInventory();});row.appendChild(btn);list.appendChild(row);
+   });
+ }
+ function renderStore(){const grid=document.getElementById('storeGrid');grid.className='storeGrid';grid.innerHTML='';const available=currentShop==='kiosk'?foods.filter(f=>kioskFoods.includes(f.id)):foods.filter(f=>!f.jewelry);
+   document.getElementById('storeTitle').textContent=currentShop==='kiosk'?'🥤 دکه LIFE CITY':'🛒 سوپرمارکت LIFE CITY';
+   document.getElementById('storeDesc').textContent=currentShop==='kiosk'?'در دکه فقط آب، چیپس و پفک فروخته می‌شود.':'محصول موردنظرت را بخر تا به کوله‌پشتی اضافه شود.';
+   available.forEach(f=>{const card=document.createElement('div');card.className='storeCard';const title=document.createElement('b');title.textContent=f.emoji+' '+f.name;const detail=document.createElement('small');detail.textContent=f.edible===false?'غیرخوراکی | '+toFa(f.price)+' سکه':('انرژی: '+f.energy+' | قیمت: '+toFa(f.price)+' سکه');
+     const btn=document.createElement('button');btn.textContent='خرید';btn.disabled=coins<f.price;btn.addEventListener('click',()=>{if(coins<f.price){document.getElementById('storeMessage').textContent='سکه کافی نداری.';return;}coins-=f.price;inventory[f.id]++;buyAnimUntil=performance.now()+700;updateHUD();renderInventory();renderStore();document.getElementById('storeMessage').textContent=f.name+' خریداری شد و به کوله‌پشتی رفت.';});
+     card.append(title,detail,document.createElement('br'),btn);grid.appendChild(card);
+   });
+ }
+
+ // Crafting recipes share one visual panel: choose product, inspect ingredients, then work or take it.
+ const bakeRecipes=[
+   {id:'sangak',name:'نان سنگک',emoji:'🥖',water:1,flour:2,price:25,energy:4,ingredients:[['water',1,'💧','آب'],['flour',2,'🌾','آرد']]},
+   {id:'barbari',name:'نان بربری',emoji:'🥯',water:2,flour:2,price:30,energy:6,ingredients:[['water',2,'💧','آب'],['flour',2,'🌾','آرد']]},
+   {id:'lavash',name:'نان لواش',emoji:'🫓',water:0,flour:1,price:15,energy:2,ingredients:[['flour',1,'🌾','آرد']]}
+ ];
+ const jewelryRecipes=[
+   {id:'pearl',name:'مروارید',emoji:'⚪',price:2300,ingredients:[['water',3,'💧','آب']]},
+   {id:'goldStone',name:'سنگ طلا',emoji:'🪨',price:2700,ingredients:[['stone',3,'🪨','سنگ'],['gold',1,'🟡','طلا']]},
+   {id:'goldenEgg',name:'تخم طلایی',emoji:'🥚',price:2900,ingredients:[['egg',2,'🥚','تخم‌مرغ'],['gold',1,'🟡','طلا']]},
+   {id:'necklace',name:'گردنبند',emoji:'📿',price:6400,ingredients:[['pearl',3,'⚪','مروارید'],['water',2,'💧','آب']]},
+   {id:'bronze',name:'برنز',emoji:'🟤',price:400,ingredients:[['silver',1,'⚪','نقره']]},
+   {id:'silver',name:'نقره',emoji:'⚪',price:850,ingredients:[['bronze',2,'🟤','برنز']]},
+   {id:'ingot',name:'شمش',emoji:'🪙',price:1350,ingredients:[['gold',2,'🟡','طلا']]},
+   {id:'gold',name:'طلا',emoji:'🟡',price:1500,ingredients:[['water',1,'💧','آب'],['ingot',1,'🪙','شمش']]}
+ ];
+ let selectedRecipe=null,craftKind='bakery',craftProgress=0;
+ function openCrafting(kind){
+   craftKind=kind;selectedRecipe=null;craftProgress=0;
+   const title=document.getElementById('craftTitle'),host=document.getElementById('bakeOptions');
+   title.textContent=kind==='bakery'?'🔥 درست کردن نان':'💎 ساخت زیورآلات';
+   document.getElementById('craftReward').textContent='دستمزد: انتخاب محصول';
+   document.getElementById('craftLevel').textContent='۰/۱۰';
+   document.getElementById('craftRecipe').textContent='یک محصول را انتخاب کن تا مواد لازم نمایش داده شود.';
+   document.getElementById('craftActions').innerHTML='';
+   host.innerHTML='';
+   const recipes=kind==='bakery'?bakeRecipes:jewelryRecipes;
+   recipes.forEach(r=>{
+     const b=document.createElement('button');b.className='craftCard';b.innerHTML='<span class="big">'+r.emoji+'</span>'+r.name;
+     b.onclick=()=>selectCraftRecipe(r);host.appendChild(b);
+   });
+   document.getElementById('bakeMessage').textContent='';
+   document.getElementById('bakePanel').style.display='block';
+ }
+ function selectCraftRecipe(r){
+   selectedRecipe=r;const box=document.getElementById('craftRecipe');box.innerHTML='';
+   (r.ingredients||[]).forEach(([id,n,emoji,name])=>{const d=document.createElement('div');d.className='craftIngredient';d.innerHTML='<div style="font-size:26px">'+emoji+'</div><div>'+name+'</div><b>'+toFa(n)+'×</b>';box.appendChild(d);});
+   const plus=document.createElement('b');plus.textContent='+';box.appendChild(plus);
+   const out=document.createElement('div');out.className='craftIngredient';out.innerHTML='<div style="font-size:26px">'+r.emoji+'</div><div>'+r.name+'</div><b>۱×</b>';box.appendChild(out);
+   document.getElementById('craftReward').textContent='دستمزد: +'+toFa(Math.floor(r.price*2/3))+' 🪙';
+   const actions=document.getElementById('craftActions');actions.innerHTML='<button class="work" id="workCraft">👷 کار کردن</button><button class="take" id="takeCraft">🎒 دریافت محصول</button>';
+   document.getElementById('workCraft').onclick=()=>completeCraft(true);
+   document.getElementById('takeCraft').onclick=()=>completeCraft(false);
+   document.getElementById('bakeMessage').textContent='مواد لازم را بررسی کن و روش را انتخاب کن.';
+ }
+ function completeCraft(asWork){
+   if(!selectedRecipe)return;const r=selectedRecipe;
+   for(const [id,n] of (r.ingredients||[])){if((inventory[id]||0)<n){document.getElementById('bakeMessage').textContent='مواد لازم کافی نیست؛ '+(foods.find(f=>f.id===id)?.name||id)+' کم داری.';return;}}
+   for(const [id,n] of (r.ingredients||[]))inventory[id]-=n;
+   if(asWork){const wage=Math.floor(r.price*2/3);salary+=wage;document.getElementById('bakeMessage').textContent='کار انجام شد! '+toFa(wage)+' سکه به حقوقت اضافه شد؛ محصول وارد کوله‌پشتی نشد.';}
+   else{inventory[r.id]=(inventory[r.id]||0)+1;document.getElementById('bakeMessage').textContent=r.name+' ساخته شد و به کوله‌پشتی اضافه شد.';}
+   craftProgress=Math.min(10,craftProgress+1);document.getElementById('craftLevel').textContent=toFa(craftProgress)+'/۱۰';
+   updateHUD();renderInventory();
+ }
+ function openBake(){openCrafting('bakery');}
+ // Seller tables only trade while the player is standing behind the counter and has activated the stall.
+ let sellerKind='super';const salePrices={};
+ const jewelryMarketStock={pearl:0,goldenEgg:0,goldStone:0,gold:0,ingot:0,silver:0,bronze:0,necklace:0};
+ function openSeller(kind){sellerKind=kind;const active=sellerActive[kind];const host=document.getElementById('sellerContent');host.innerHTML='';
+   if(kind==='jewelry'){
+     document.getElementById('sellerTitle').textContent='مدیریت بازار جواهری';
+     document.getElementById('sellerDesc').textContent=active?'فروش فعال است؛ کالاها را از کوله به ویترین منتقل کن.':'فروش را شروع کن و محصولات را در ویترین قرار بده.';
+     const toggle=document.createElement('button');toggle.textContent=active?'توقف فروش':'شروع فروش';toggle.onclick=()=>{sellerActive.jewelry=!sellerActive.jewelry;openSeller('jewelry');};host.appendChild(toggle);
+     foods.filter(f=>f.jewelry).forEach(f=>{
+       const row=document.createElement('div');row.className='itemRow';
+       const price=salePrices['jewelry:'+f.id]||f.price;const label=document.createElement('span');
+       label.textContent=f.emoji+' '+f.name+' | کوله: '+toFa(inventory[f.id]||0)+' | ویترین: '+toFa(jewelryMarketStock[f.id]||0)+' | '+toFa(price)+' سکه';
+       const priceBtn=document.createElement('button');priceBtn.textContent='قیمت‌گذاری';priceBtn.onclick=()=>{const v=prompt('قیمت '+f.name+' را وارد کن:',String(price));if(v===null)return;salePrices['jewelry:'+f.id]=Math.max(1,Math.floor(Number(v)||price));openSeller('jewelry');};
+       const stockBtn=document.createElement('button');stockBtn.textContent='گذاشتن در ویترین';stockBtn.disabled=!active||(inventory[f.id]||0)<1;stockBtn.onclick=()=>{if(!sellerActive.jewelry||(inventory[f.id]||0)<1)return;inventory[f.id]--;jewelryMarketStock[f.id]=(jewelryMarketStock[f.id]||0)+1;updateHUD();renderInventory();openSeller('jewelry');};
+       row.append(label,priceBtn,stockBtn);host.appendChild(row);
+     });
+     document.getElementById('sellerPanel').style.display='block';return;
+   }
+   document.getElementById('sellerTitle').textContent=kind==='super'?'میز فروش سوپرمارکت':(kind==='bakery'?'میز فروش نانوایی':'میز فروش جواهری');document.getElementById('sellerDesc').textContent=active?'فروشگاه فعال است؛ مشتری می‌تواند خرید کند.':'برای فعال شدن فروش، دکمه شروع فروش را بزن.';host.innerHTML='';const toggle=document.createElement('button');toggle.textContent=active?'توقف فروش':'شروع فروش';toggle.onclick=()=>{sellerActive[kind]=!sellerActive[kind];openSeller(kind);};host.appendChild(toggle);const products=kind==='bakery'?bakeRecipes.map(r=>({id:r.id,name:r.name,price:r.price,emoji:r.emoji})):kind==='jewelry'?foods.filter(f=>f.jewelry).map(f=>({id:f.id,name:f.name,price:f.price,emoji:f.emoji})):foods.filter(f=>['water','egg','tea','puff','chips','milk','flour'].includes(f.id)).map(f=>({id:f.id,name:f.name,price:f.price,emoji:f.emoji}));products.forEach(prod=>{const row=document.createElement('div');row.className='itemRow';const qty=inventory[prod.id]||0;prod.price=salePrices[kind+':'+prod.id]||prod.price;const label=document.createElement('span');label.textContent=prod.emoji+' '+prod.name+' | موجودی: '+toFa(qty)+' | قیمت: '+toFa(prod.price);const sell=document.createElement('button');sell.textContent='فروش / قیمت';sell.disabled=!active||qty<1;sell.onclick=()=>{const v=prompt('قیمت فروش '+prod.name+' را به سکه وارد کن:',String(prod.price));if(v===null)return;const price=Math.max(1,Math.floor(Number(v)||prod.price));salePrices[kind+':'+prod.id]=price;prod.price=price;label.textContent=prod.emoji+' '+prod.name+' | موجودی: '+toFa(inventory[prod.id]||0)+' | قیمت: '+toFa(price);};const buy=document.createElement('button');buy.textContent='خرید';buy.disabled=!active||qty<1||coins<prod.price;buy.onclick=()=>{if(!sellerActive[kind]||!inventory[prod.id]||coins<prod.price)return;coins-=prod.price;inventory[prod.id]--;salary+=prod.price;updateHUD();openSeller(kind);};row.append(label,sell,buy);host.appendChild(row);});document.getElementById('sellerPanel').style.display='block';}
+
+ function openJewelryBuy(){
+   const host=document.getElementById('storeGrid');host.className='jewelMarketGrid';host.innerHTML='';
+   document.getElementById('storeTitle').textContent='💎 بازار جواهری LIFE CITY';
+   document.getElementById('storeDesc').innerHTML='<div class="jewelMarketHeader"><span>مالیات ۱۰٪</span><span>بازار جواهری</span></div><b>محصولات شما</b>';
+   foods.filter(f=>f.jewelry).forEach(f=>{
+     const card=document.createElement('div');card.className='jewelMarketCard';
+     const qty=document.createElement('div');qty.className='qty';qty.textContent=toFa(jewelryMarketStock[f.id]||0)+'×';
+     const icon=document.createElement('div');icon.className='productIcon';icon.textContent=f.emoji;
+     const name=document.createElement('div');name.className='productName';name.textContent=f.name;
+     const priceValue=salePrices['jewelry:'+f.id]||f.price;
+     const price=document.createElement('div');price.className='price';price.textContent='🪙 '+toFa(priceValue);
+     const btn=document.createElement('button');btn.textContent='خرید';
+     btn.disabled=!sellerActive.jewelry||(jewelryMarketStock[f.id]||0)<1||coins<priceValue;
+     btn.onclick=()=>{if(!sellerActive.jewelry||(jewelryMarketStock[f.id]||0)<1||coins<priceValue)return;coins-=priceValue;jewelryMarketStock[f.id]--;inventory[f.id]=(inventory[f.id]||0)+1;salary+=priceValue;updateHUD();renderInventory();qty.textContent=toFa(jewelryMarketStock[f.id])+'×';btn.disabled=(jewelryMarketStock[f.id]||0)<1||coins<priceValue;document.getElementById('storeMessage').textContent=f.name+' خریداری شد.';};
+     card.append(qty,icon,name,price,btn);host.appendChild(card);
+   });
+   document.getElementById('storeMessage').textContent=sellerActive.jewelry?'کالاهای ویترین آماده خرید هستند.':'فروشنده پشت میز نیست؛ برای خرید باید فروشنده فروش را فعال کرده و کالا در ویترین گذاشته باشد.';
+   storePanel.style.display='block';
+ }
+ function openBank(){document.getElementById('bankInfo').textContent='حقوق قابل نقد کردن: '+toFa(salary)+' سکه';document.getElementById('bankMessage').textContent='';document.getElementById('bankPanel').style.display='block';}
+ document.getElementById('cashSalary').onclick=()=>{if(salary<=0){document.getElementById('bankMessage').textContent='حقوقی برای نقد کردن نداری.';return;}const fee=Math.ceil(salary*.15),paid=salary-fee;coins+=paid;salary=0;updateHUD();document.getElementById('bankInfo').textContent='حقوق قابل نقد کردن: ۰ سکه';document.getElementById('bankMessage').textContent='۱۵٪ کارمزد ('+toFa(fee)+' سکه) کسر شد و '+toFa(paid)+' سکه به موجودی اصلی اضافه شد.';};
+ document.getElementById('closeBake').onclick=()=>document.getElementById('bakePanel').style.display='none';document.getElementById('closeBank').onclick=()=>document.getElementById('bankPanel').style.display='none';document.getElementById('closeSeller').onclick=()=>document.getElementById('sellerPanel').style.display='none';
+ const fuelPrices=[{id:'regular',name:'بنزین',price:50},{id:'oil',name:'نفت',price:100},{id:'diesel',name:'گازوئیل',price:70},{id:'gas',name:'گاز',price:60},{id:'premium',name:'بنزین سوپر',price:75}];
+ const fuelOptions=document.getElementById('fuelOptions');fuelPrices.forEach(f=>{const card=document.createElement('div');card.className='storeCard';card.innerHTML='<b>⛽ '+f.name+'</b><small>۱۰٪ باک | '+f.price+' سکه</small>';const btn=document.createElement('button');btn.textContent='خرید';btn.onclick=()=>{if(coins<f.price){document.getElementById('fuelMessage').textContent='سکه کافی نداری.';return;}if(tractorFuel>=100){document.getElementById('fuelMessage').textContent='باک تراکتور پر است.';return;}coins-=f.price;tractorFuel=Math.min(100,tractorFuel+10);updateHUD();document.getElementById('fuelText').textContent='⛽ سوخت: '+toFa(Math.round(tractorFuel))+'٪';document.getElementById('fuelMessage').textContent='۱۰٪ سوخت اضافه شد.';};card.appendChild(btn);fuelOptions.appendChild(card);});
+ document.getElementById('closeFuel').onclick=()=>document.getElementById('fuelPanel').style.display='none';document.getElementById('closeMechanic').onclick=()=>document.getElementById('mechanicPanel').style.display='none';
+ function openMechanic(){const missing=100-tractorPower,cost=Math.ceil(missing*3);document.getElementById('mechanicInfo').textContent='قدرت فعلی تراکتور: '+toFa(tractorPower)+'٪ | هزینه تعمیر کامل: '+toFa(cost)+' سکه';document.getElementById('mechanicMessage').textContent='';document.getElementById('repairTractor').disabled=missing===0;document.getElementById('mechanicPanel').style.display='block';}
+ document.getElementById('repairTractor').onclick=()=>{const cost=Math.ceil((100-tractorPower)*3);if(tractorPower>=100){document.getElementById('mechanicMessage').textContent='تراکتور سالم است.';return;}if(coins<cost){document.getElementById('mechanicMessage').textContent='سکه کافی برای تعمیر نداری.';return;}coins-=cost;tractorPower=100;updateHUD();document.getElementById('powerText').textContent='⚙️ قدرت: ۱۰۰٪';openMechanic();document.getElementById('mechanicMessage').textContent='تراکتور کاملاً تعمیر شد!';};
+ const bagPanel=document.getElementById('bagPanel'),storePanel=document.getElementById('storePanel'),namePanel=document.getElementById('namePanel');
+ const mapPanel=document.getElementById('mapPanel'),mapCanvas=document.getElementById('mapCanvas'),mapCtx=mapCanvas.getContext('2d');
+ const mapLocations=[
+   {name:'سوپرمارکت',x:mx,z:mz,emoji:'🛒'},
+   {name:'دکه',x:kx,z:kz,emoji:'🥤'},
+   {name:'دکه دوم',x:k2x,z:k2z,emoji:'🥤'},
+   {name:'ثبت احوال',x:rx,z:rz,emoji:'🏛️'},
+   {name:'نانوایی',x:bx,z:bz,emoji:'🥖'},
+   {name:'بانک',x:0,z:60,emoji:'🏦'},
+   {name:'جواهری',x:jx,z:jz,emoji:'💎'},
+   {name:'پارکینگ',x:-9.15,z:-48,emoji:'🅿️'},
+   {name:'مزرعه',x:farmX,z:farmZ,emoji:'🌾'},
+   {name:'پمپ بنزین',x:fuelX,z:fuelZ,emoji:'⛽'},
+   {name:'مکانیکی',x:mechanicX,z:mechanicZ,emoji:'🔧'}
+ ];
+ let mapTarget=null;
+ function mapPoint(x,z){return {x:((x+145)/290)*mapCanvas.width,y:((z+145)/290)*mapCanvas.height};}
+ function drawMap(){
+   const w=mapCanvas.width,h=mapCanvas.height;mapCtx.clearRect(0,0,w,h);mapCtx.fillStyle='#789b65';mapCtx.fillRect(0,0,w,h);
+   mapCtx.fillStyle='#303943';for(let p=-80;p<=80;p+=40){let a=mapPoint(p,-110),b=mapPoint(p,110);mapCtx.fillRect(a.x-19,0,38,h);a=mapPoint(-110,p);b=mapPoint(110,p);mapCtx.fillRect(0,a.y-19,w,38);}
+   mapCtx.strokeStyle='#f4e8bf';mapCtx.lineWidth=2;mapCtx.setLineDash([8,8]);for(let p=-80;p<=80;p+=40){let a=mapPoint(p,-110),b=mapPoint(p,110);mapCtx.beginPath();mapCtx.moveTo(a.x,a.y);mapCtx.lineTo(b.x,b.y);mapCtx.stroke();a=mapPoint(-110,p);b=mapPoint(110,p);mapCtx.beginPath();mapCtx.moveTo(a.x,a.y);mapCtx.lineTo(b.x,b.y);mapCtx.stroke();}mapCtx.setLineDash([]);
+   mapCtx.fillStyle='#d7c7a9';for(const l of mapLocations){const q=mapPoint(l.x,l.z);mapCtx.fillRect(q.x-17,q.y-13,34,26);}
+   for(const pp of parkingSigns){const q=mapPoint(pp.x,pp.z);mapCtx.fillStyle='#f7f7f7';mapCtx.fillRect(q.x-13,q.y-13,26,26);mapCtx.fillStyle='#1765b0';mapCtx.font='bold 22px Arial';mapCtx.textAlign='center';mapCtx.fillText('P',q.x,q.y+8);}
+   for(const l of mapLocations){const q=mapPoint(l.x,l.z);mapCtx.fillStyle=mapTarget===l?'#ffd447':'#fff';mapCtx.beginPath();mapCtx.arc(q.x,q.y,7,0,Math.PI*2);mapCtx.fill();mapCtx.fillStyle='#172333';mapCtx.font='bold 15px Tahoma';mapCtx.textAlign='center';mapCtx.fillText(l.name,q.x,q.y-18);}
+   const mapActor=driving?tractor:player;const me=mapPoint(mapActor.position.x,mapActor.position.z);mapCtx.fillStyle='#16a9ff';mapCtx.beginPath();mapCtx.arc(me.x,me.y,10,0,Math.PI*2);mapCtx.fill();mapCtx.strokeStyle='white';mapCtx.lineWidth=3;mapCtx.stroke();
+   if(mapTarget){const q=mapPoint(mapTarget.x,mapTarget.z);mapCtx.strokeStyle='#ffd447';mapCtx.lineWidth=4;mapCtx.beginPath();mapCtx.moveTo(me.x,me.y);mapCtx.lineTo(q.x,q.y);mapCtx.stroke();document.getElementById('mapInfo').textContent='مقصد: '+mapTarget.name+' | فاصله تقریبی: '+Math.round(Math.hypot(mapActor.position.x-mapTarget.x,mapActor.position.z-mapTarget.z))+' متر';}
+ }
+ const mapPlaces=document.getElementById('mapPlaces');mapLocations.forEach(l=>{const b=document.createElement('button');b.textContent=l.emoji+' '+l.name;b.addEventListener('click',()=>{mapTarget=l;drawMap();});mapPlaces.appendChild(b);});
+ document.getElementById('mapButton').addEventListener('click',()=>{drawMap();mapPanel.style.display='block';});
+ document.getElementById('closeMap').addEventListener('click',()=>mapPanel.style.display='none');
+ document.getElementById('bagButton').addEventListener('click',()=>{renderInventory();bagPanel.style.display='block';});
+ document.getElementById('closeBag').addEventListener('click',()=>bagPanel.style.display='none');
+ document.getElementById('closeStore').addEventListener('click',()=>storePanel.style.display='none');
+ document.getElementById('closeName').addEventListener('click',()=>namePanel.style.display='none');
+ const settingsPanel=document.getElementById('settingsPanel');
+ document.getElementById('settingsButton').onclick=()=>{refreshProfile();settingsPanel.style.display='block';};
+ document.getElementById('closeSettings').onclick=()=>settingsPanel.style.display='none';
+ document.querySelectorAll('.settingsTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.settingsSection').forEach(s=>s.style.display='none');document.getElementById('settings-'+b.dataset.tab).style.display='block';});
+ document.getElementById('goRegistry').onclick=()=>{settingsPanel.style.display='none';mapTarget=mapLocations.find(l=>l.name==='ثبت احوال')||null;drawMap();mapPanel.style.display='block';document.getElementById('mapInfo').textContent='مقصد ثبت نام: ثبت احوال؛ به نشان زرد روی نقشه برو و جلوی میز تعامل کن.';};
+ document.querySelectorAll('.avatarChoice').forEach(b=>b.onclick=()=>{selectedAvatar=b.dataset.avatar;safeSet('lifeCityAvatar',selectedAvatar);refreshProfile();});
+ let firstPerson=false,graphicsQuality='medium';
+ function setCameraMode(mode){firstPerson=mode==='first';document.getElementById('cameraSettingText').textContent='حالت فعلی: '+(firstPerson?'اول شخص':'سوم شخص');}
+ document.getElementById('cameraFirst').onclick=()=>setCameraMode('first');document.getElementById('cameraThird').onclick=()=>setCameraMode('third');
+ function setGraphicsQuality(q){graphicsQuality=q;const ratio=q==='high'?2.15:q==='medium'?1.45:1;renderer.setPixelRatio(Math.min(devicePixelRatio,ratio));renderer.shadowMap.enabled=q!=='low';sun.shadow.mapSize.set(q==='high'?3072:q==='medium'?1536:768,q==='high'?3072:q==='medium'?1536:768);sun.shadow.needsUpdate=true;document.querySelectorAll('.qualityChoices button').forEach(b=>b.classList.toggle('selected',b.dataset.quality===q));document.getElementById('qualityText').textContent='کیفیت '+(q==='high'?'بالا':q==='medium'?'متوسط':'پایین')+' فعال است.';}
+ document.querySelectorAll('.qualityChoices button').forEach(b=>b.onclick=()=>setGraphicsQuality(b.dataset.quality));setGraphicsQuality('medium');
+ document.getElementById('savePlayerName').addEventListener('click',()=>{const v=document.getElementById('playerNameInput').value.trim();if(!v){document.getElementById('nameMessage').textContent='لطفاً یک نام وارد کن.';return;}if(Array.from(v).length>8){document.getElementById('nameMessage').textContent='نام حداکثر ۸ نویسه است.';return;}playerName=v;safeSet('lifeCityPlayerName',playerName);refreshNameTag();refreshProfile();namePanel.style.display='none';});
+ document.getElementById('interact').addEventListener('click',()=>{
+   const msg=document.getElementById('interact').dataset.action;
+   if(msg==='fuel'){document.getElementById('fuelMessage').textContent='';document.getElementById('fuelPanel').style.display='block';}
+   else if(msg==='mechanic'){openMechanic();}
+   if(msg==='parking'){document.getElementById('parkingPanel').style.display='block';}
+   else if(msg==='super'){currentShop='super';renderStore();storePanel.style.display='block';}
+   else if(msg==='kiosk'){currentShop='kiosk';renderStore();storePanel.style.display='block';}
+   else if(msg==='registry'){document.getElementById('playerNameInput').value=playerName;namePanel.style.display='block';}
+   else if(msg==='bake'){openBake();}
+   else if(msg==='jewelBuy'){openJewelryBuy();}
+   else if(msg==='jewelSell'){openSeller('jewelry');}
+   else if(msg==='jewelCraft'){openCrafting('jewelry');}
+   else if(msg==='jewelUp'){jewelryFloor=1;playerFloor=7.15;player.position.set(jx+6.6,playerFloor,jz+2.5);}
+   else if(msg==='jewelDown'){jewelryFloor=0;playerFloor=0;player.position.set(jx+6.6,playerFloor,jz+2.5);}
+   else if(msg==='farmWheat'){if(farmStock.wheat>0){farmStock.wheat--;inventory.wheat=(inventory.wheat||0)+1;farmTimers.wheat=0;renderInventory();}}
+   else if(msg==='farmEgg'){if(farmStock.egg>0){farmStock.egg--;inventory.egg=(inventory.egg||0)+1;farmTimers.egg=0;renderInventory();}}
+   else if(msg==='farmMilk'){if(farmStock.milk>0){farmStock.milk--;inventory.milk=(inventory.milk||0)+1;farmTimers.milk=0;renderInventory();}}
+   else if(msg==='bank'){openBank();}
+   else if(msg==='sellSuper'){openSeller('super');}
+   else if(msg==='sellBakery'){openSeller('bakery');}
+
+ });
+ document.getElementById('closeParking').onclick=()=>document.getElementById('parkingPanel').style.display='none';
+ document.getElementById('selectTractor').onclick=()=>{
+   const pp=parkingSigns.reduce((a,b)=>Math.hypot(player.position.x-a.x,player.position.z-a.z)<Math.hypot(player.position.x-b.x,player.position.z-b.z)?a:b);
+   // Spawn in the marked parking bay, clear of the bank, benches and signpost.
+   tractor.position.set(pp.spawnX,0,pp.spawnZ);vehicleYaw=pp.yaw||0;tractor.rotation.y=vehicleYaw;tractor.visible=true;
+   ensureAudio();driving=true;vehicleSpeed=0;gear=1;gasOn=false;brakeOn=false;clutchOn=false;steer=0;player.visible=false;document.getElementById('parkingPanel').style.display='none';
+   document.getElementById('driveControls').style.display='block';document.getElementById('speedValue').textContent='۰ km/h';document.getElementById('gearText').textContent='دنده: ۱';document.getElementById('fuelText').textContent='⛽ سوخت: '+toFa(Math.round(tractorFuel))+'٪';document.getElementById('powerText').textContent='⚙️ قدرت: '+toFa(Math.round(tractorPower))+'٪';
+   document.getElementById('joystick').style.display='none';document.getElementById('jump').style.display='none';document.getElementById('run').style.display='none';document.getElementById('interact').style.display='none';
+ };
+ function bindHold(id,fn){const el=document.getElementById(id);el.addEventListener('pointerdown',e=>{e.preventDefault();fn(true);el.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>el.addEventListener(ev,()=>fn(false)));}
+ bindHold('gas',v=>gasOn=v);bindHold('brake',v=>brakeOn=v);bindHold('clutch',v=>clutchOn=v);
+ bindHold('steerLeft',v=>{if(v)steer=-1;else if(steer===-1)steer=0;});
+ bindHold('steerRight',v=>{if(v)steer=1;else if(steer===1)steer=0;});
+ document.getElementById('gearUp').onclick=()=>{gear=Math.min(4,gear+1);document.getElementById('gearText').textContent='دنده: '+(gear===0?'خلاص':gear===-1?'عقب':gear);};
+ document.getElementById('gearDown').onclick=()=>{gear=Math.max(-1,gear-1);document.getElementById('gearText').textContent='دنده: '+(gear===0?'خلاص':gear===-1?'عقب':gear);};
+ document.getElementById('exitVehicle').onclick=()=>{
+   driving=false;vehicleSpeed=0;if(engineGain&&audioCtx)engineGain.gain.setTargetAtTime(0,audioCtx.currentTime,.08);tractor.visible=false;player.visible=true;
+   player.position.set(tractor.position.x+2,0,tractor.position.z+1.5);
+   document.getElementById('driveControls').style.display='none';gasOn=false;brakeOn=false;clutchOn=false;steer=0;gear=0;
+   document.getElementById('joystick').style.display='block';document.getElementById('jump').style.display='block';document.getElementById('run').style.display='block';
+ };
+ updateHUD();renderInventory();renderStore();
+ // input and camera
+
+ // Lightweight synthesized sound effects (no external audio downloads).
+ let audioCtx=null,engineOsc=null,engineGain=null,lastStepAt=0;
+ function ensureAudio(){if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=new AC();engineOsc=audioCtx.createOscillator();engineOsc.type='sawtooth';engineGain=audioCtx.createGain();engineGain.gain.value=0;engineOsc.frequency.value=55;engineOsc.connect(engineGain);engineGain.connect(audioCtx.destination);engineOsc.start();}if(audioCtx.state==='suspended')audioCtx.resume();}
+ function shortSound(freq=180,duration=.07,volume=.035){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.setValueAtTime(freq,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(Math.max(45,freq*.55),audioCtx.currentTime+duration);g.gain.setValueAtTime(volume,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration);}
+ document.addEventListener('pointerdown',ensureAudio,{once:true});
+ let joy={x:0,y:0},joyOn=false,run=false,jumpV=0,grounded=true,playerFloor=0,yaw=0,pitch=.48;
+ const joyEl=document.getElementById('joystick'),stick=document.getElementById('stick');
+ function setJoy(e){const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=42,l=Math.hypot(dx,dy);if(l>max){dx=dx/l*max;dy=dy/l*max;}joy.x=dx/max;joy.y=dy/max;stick.style.transform=`translate(${dx}px,${dy}px)`;}
+ joyEl.addEventListener('pointerdown',e=>{joyOn=true;joyEl.setPointerCapture(e.pointerId);setJoy(e)});
+ joyEl.addEventListener('pointermove',e=>{if(joyOn)setJoy(e)});
+ function endJoy(){joyOn=false;joy.x=joy.y=0;stick.style.transform='translate(0,0)'}
+ joyEl.addEventListener('pointerup',endJoy);joyEl.addEventListener('pointercancel',endJoy);
+ document.getElementById('run').addEventListener('pointerdown',()=>run=true);
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>document.getElementById('run').addEventListener(ev,()=>run=false));
+ document.getElementById('jump').addEventListener('pointerdown',()=>{if(grounded){jumpV=7;grounded=false}});
+ let lookOn=false,lastX=0,lastY=0;
+ renderer.domElement.addEventListener('pointerdown',e=>{if(e.clientX>innerWidth*.40){lookOn=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)}});
+ renderer.domElement.addEventListener('pointermove',e=>{if(lookOn){yaw-=(e.clientX-lastX)*.006;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-lastY)*.004,-.15,1.15);lastX=e.clientX;lastY=e.clientY}});
+ renderer.domElement.addEventListener('pointerup',()=>lookOn=false);renderer.domElement.addEventListener('pointercancel',()=>lookOn=false);
+ const clock=new THREE.Clock();
+ function animate(){
+   requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
+   const speed=run?8:4.5;
+   const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+   const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+   const move=forward.clone().multiplyScalar(-joy.y).add(right.multiplyScalar(joy.x));
+   if(driving){if(engineGain&&audioCtx){engineGain.gain.setTargetAtTime(gasOn?.035:.012,audioCtx.currentTime,.08);engineOsc.frequency.setTargetAtTime(48+Math.abs(vehicleSpeed)*13+(gasOn?28:0),audioCtx.currentTime,.08);}const maxSpeed=gear===0?0:(gear<0?-2.2:gear*2.1);if(gasOn&&gear!==0&&!clutchOn&&tractorFuel>0&&tractorPower>0)vehicleSpeed+=Math.sign(maxSpeed)*7*dt;else if(brakeOn)vehicleSpeed*=Math.max(0,1-5*dt);else vehicleSpeed*=Math.max(0,1-1.1*dt);vehicleSpeed=THREE.MathUtils.clamp(vehicleSpeed,-8,gear<0?2.5:Math.max(2.5,gear*2.1));if(Math.abs(vehicleSpeed)>.08&&gear!==0)vehicleYaw-=steer*dt*1.05*Math.sign(vehicleSpeed);tractor.rotation.y=vehicleYaw;const fwd=new THREE.Vector3(-Math.sin(vehicleYaw),0,-Math.cos(vehicleYaw));const nx=tractor.position.x+fwd.x*vehicleSpeed*dt,nz=tractor.position.z+fwd.z*vehicleSpeed*dt;let hit=false;if(!vehicleBlockedAt(nx,tractor.position.z))tractor.position.x=nx;else if(Math.abs(vehicleSpeed)>.45)hit=true;if(!vehicleBlockedAt(tractor.position.x,nz))tractor.position.z=nz;else if(Math.abs(vehicleSpeed)>.45)hit=true;if(hit&&performance.now()-lastVehicleImpact>1100){const damage=Math.abs(vehicleSpeed)>5?15:4;tractorPower=Math.max(0,tractorPower-damage);lastVehicleImpact=performance.now();vehicleSpeed*=.22;document.getElementById('powerText').textContent='⚙️ قدرت: '+toFa(Math.round(tractorPower))+'٪';shortSound(65,.18,.07);}tractorWheels.forEach(w=>{w.pivot.rotation.x-=vehicleSpeed*dt/Math.max(.2,w.r);if(w.front)w.pivot.rotation.y=-steer*.34;});
+   if(gasOn&&Math.abs(vehicleSpeed)>.1)tractorFuel=Math.max(0,tractorFuel-dt*.055);document.getElementById('fuelText').textContent='⛽ سوخت: '+toFa(Math.round(tractorFuel))+'٪';const km=Math.round(Math.abs(vehicleSpeed)*7);document.getElementById('speedValue').textContent=toFa(km)+' km/h';document.getElementById('gearText').textContent='دنده: '+(gear===0?'خلاص':gear===-1?'عقب':toFa(gear));steering.rotation.z=steer*.35;}else{document.getElementById('speedValue').textContent='۰ km/h';}
+   const panelsOpen=[bagPanel,storePanel,namePanel,mapPanel,document.getElementById('bakePanel'),document.getElementById('bankPanel'),document.getElementById('sellerPanel'),document.getElementById('parkingPanel'),settingsPanel,document.getElementById('fuelPanel'),document.getElementById('mechanicPanel')].some(el=>el.style.display==='block');
+   if(!driving && move.lengthSq()>.001 && !panelsOpen){
+     move.normalize();const step=speed*dt;const oldX=player.position.x,oldZ=player.position.z;
+     const nextX=oldX+move.x*step,nextZ=oldZ+move.z*step;
+     if(!blockedAt(nextX,oldZ))player.position.x=nextX;
+     if(!blockedAt(player.position.x,nextZ))player.position.z=nextZ;
+     player.rotation.y=Math.atan2(move.x,move.z);
+   }
+   // Enter and leave the supermarket automatically through its doorway; no entry button.
+   if(!inStore && player.position.x>mx-1.7&&player.position.x<mx+1.7&&player.position.z>storeFront-.25&&player.position.z<storeFront+1.0){inStore=true;document.getElementById('status').innerHTML='مکان: سوپرمارکت<br>بازیکن: 001';}
+   if(inStore && player.position.x>mx-1.8&&player.position.x<mx+1.8&&player.position.z<storeFront-.8){inStore=false;storePanel.style.display='none';document.getElementById('status').innerHTML='وضعیت: آزاد<br>بازیکن: 001';}
+   // Farm stock regeneration: wheat every 8 seconds; eggs and milk every 15 seconds.
+   farmTimers.wheat+=dt;farmTimers.egg+=dt;farmTimers.milk+=dt;
+   if(farmTimers.wheat>=8&&farmStock.wheat<6){farmStock.wheat++;farmTimers.wheat=0;}
+   if(farmTimers.egg>=15&&farmStock.egg<4){farmStock.egg++;farmTimers.egg=0;}
+   if(farmTimers.milk>=15&&farmStock.milk<4){farmStock.milk++;farmTimers.milk=0;}
+   const serviceActor=driving?tractor:player;
+   let action='',label='';
+   if(inStore && Math.hypot(player.position.x-mx,player.position.z-(mz-5.0))<3.4){action='super';label='🛒 خرید از صندوق';}
+   else if(!driving && parkingSigns.some(pp=>Math.hypot(player.position.x-pp.x,player.position.z-pp.z)<5.5)){action='parking';label='🅿️ پارکینگ';}
+   else if(!inStore && Math.hypot(player.position.x-kioskCounter.x,player.position.z-kioskCounter.z)<4.2){action='kiosk';label='🥤 خرید از دکه';}
+   else if(!inStore && Math.hypot(player.position.x-kioskCounter2.x,player.position.z-kioskCounter2.z)<4.2){action='kiosk';label='🥤 خرید از دکه دوم';}
+   else if(player.position.x>jx-4.2&&player.position.x<jx+4.2&&player.position.z>jz-6.2&&player.position.z<jz-4.2&&jewelryFloor===0){action='jewelBuy';label='💎 خرید جواهر از فروشنده';}
+   else if(player.position.x>jx-4.2&&player.position.x<jx+4.2&&player.position.z>jz-1.2&&player.position.z<jz+0.2&&jewelryFloor===0){action='jewelSell';label='💰 مدیریت میز فروش جواهری';}
+   else if(player.position.x>jx+5.0&&player.position.x<jx+8.2&&player.position.z>jz-1&&player.position.z<jz+4&&jewelryFloor===0){action='jewelUp';label='⬆️ رفتن به طبقه بالا';}
+   else if(jewelryFloor===1&&player.position.y>6&&player.position.x>jx+1&&player.position.x<jx+4.5&&player.position.z>jz+.4&&player.position.z<jz+2.8){action='jewelCraft';label='📿 ساخت گردنبند';}
+   else if(jewelryFloor===1&&player.position.y>6&&player.position.x>jx+5&&player.position.x<jx+8.2&&player.position.z>jz-1&&player.position.z<jz+4){action='jewelDown';label='⬇️ رفتن به طبقه پایین';}
+   else if(player.position.x>bx-3.8&&player.position.x<bx+3.8&&player.position.z>bz+1.5&&player.position.z<bz+5.4){action='bake';label='🔥 پخت نان';}
+   else if(player.position.x>bankX-7&&player.position.x<bankX+7&&player.position.z>bankZ-1&&player.position.z<bankZ+3.5){action='bank';label='🏦 مراجعه به باجه بانک';}
+   else if(inStore && Math.abs(player.position.x-(mx+6.2))<2.5&&Math.abs(player.position.z-(mz-5.0))<2.0){action='sellSuper';label='💰 میز فروش سوپرمارکت';}
+   else if(player.position.x>bx+3.5&&player.position.x<bx+7.8&&player.position.z>bz-2.5&&player.position.z<bz-.2){action='sellBakery';label='💰 میز فروش نانوایی';}
+   else if(Math.hypot(serviceActor.position.x-fuelApproach.x,serviceActor.position.z-fuelApproach.z)<6){action='fuel';label='⛽ خرید سوخت';}
+   else if(Math.hypot(serviceActor.position.x-mechanicApproach.x,serviceActor.position.z-mechanicApproach.z)<6){action='mechanic';label='🔧 تعمیر تراکتور';}
+   else if(farmStock.wheat>0&&Math.hypot(player.position.x-(farmX-5),player.position.z-farmZ)<7){action='farmWheat';label='🌾 برداشت گندم';}
+   else if(farmStock.egg>0&&Math.hypot(player.position.x-(farmX+13),player.position.z-(farmZ-5))<5){action='farmEgg';label='🥚 برداشت تخم‌مرغ';}
+   else if(farmStock.milk>0&&Math.hypot(player.position.x-(farmX+13),player.position.z-(farmZ+7))<5){action='farmMilk';label='🥛 برداشت شیر';}
+   else if(!inRegistry && player.position.x>rx-4.2&&player.position.x<rx+4.2&&player.position.z>rz-2.5&&player.position.z<rz+1.0){action='registry';label='🏛️ ثبت نام در میز';}
+   const interact=document.getElementById('interact');interact.style.display=action&&!panelsOpen?'block':'none';interact.textContent=label;interact.dataset.action=action;
+   // Walk/run cycle animation; jump remains independent.
+   const moving=!driving&&move.lengthSq()>.01&&!panelsOpen;if(moving&&clock.elapsedTime-lastStepAt>.42){shortSound(run?125:95,.055,.022);lastStepAt=clock.elapsedTime;}const cycle=clock.elapsedTime*(run?12:8);const swing=moving?Math.sin(cycle)*.62:0;
+   limbs.legs[0].rotation.x=swing;limbs.legs[1].rotation.x=-swing;limbs.arms[0].rotation.x=-swing*.75;limbs.arms[1].rotation.x=swing*.75;
+   if(performance.now()<buyAnimUntil){limbs.arms[0].rotation.x=-1.15;limbs.arms[1].rotation.x=-1.15;}
+   torso.position.y=1.65+(moving?Math.abs(Math.sin(cycle*2))*.035:0);
+   if(!grounded) {limbs.legs[0].rotation.x=-.45;limbs.legs[1].rotation.x=.45;}
+
+   jumpV-=18*dt;player.position.y+=jumpV*dt;if(player.position.y<=playerFloor){player.position.y=playerFloor;jumpV=0;grounded=true;}
+   player.position.x=THREE.MathUtils.clamp(player.position.x,-135,135);player.position.z=THREE.MathUtils.clamp(player.position.z,-135,135);
+   const focus=driving?tractor:player;const target=new THREE.Vector3(focus.position.x,focus.position.y+(driving?1.5:1.5),focus.position.z);
+   const followYaw=driving?vehicleYaw+yaw:yaw;if(firstPerson){const eye=target.clone().add(new THREE.Vector3(0,.45,0));const lookDir=new THREE.Vector3(-Math.sin(followYaw)*Math.cos(pitch),Math.sin(pitch),-Math.cos(followYaw)*Math.cos(pitch));camera.position.lerp(eye,1-Math.pow(.001,dt));camera.lookAt(eye.clone().add(lookDir.multiplyScalar(12)));if(!driving)player.visible=false;}else{if(!driving)player.visible=true;const horizontal=(driving?10:8)*Math.cos(pitch);const camOffset=new THREE.Vector3(Math.sin(followYaw)*horizontal,2.2+8*Math.sin(pitch),Math.cos(followYaw)*horizontal);camera.position.lerp(target.clone().add(camOffset),1-Math.pow(.001,dt));camera.lookAt(target);}
+   if(mapPanel.style.display==='block' && Math.floor(clock.elapsedTime*4)!==Math.floor((clock.elapsedTime-dt)*4))drawMap();
+   renderer.render(scene,camera);
+ }
+ animate();document.getElementById('loading').style.display='none';
+ addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2.15));});
+ addEventListener('orientationchange',()=>setTimeout(()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);},150));
+}
+window.addEventListener('error', function(ev){
+  const box=document.getElementById('loading');
+  if(box && box.style.display!=='none' && ev && ev.message){
+    box.innerHTML='خطای اجرای بازی: <small style="direction:ltr;display:block">'+String(ev.message).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</small>';
+  }
+});
+window.addEventListener('unhandledrejection', function(ev){
+  const box=document.getElementById('loading');
+  if(box && box.style.display!=='none'){
+    const reason=ev.reason && (ev.reason.stack||ev.reason.message) ? (ev.reason.stack||ev.reason.message) : ev.reason;
+    box.innerHTML='خطای اجرای بازی: <small style="direction:ltr;display:block;white-space:pre-wrap">'+String(reason).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</small>';
+  }
+});
+(function loadThreeWithFallback(){
+  const loading = document.getElementById('loading');
+  const sources = [
+    'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js',
+    'https://unpkg.com/three@0.160.0/build/three.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js'
+  ];
+  let index = 0;
+  function showFailure(){
+    loading.innerHTML = 'بارگذاری کتابخانه گرافیکی ناموفق بود.'
+      + '<small>اینترنت را بررسی کن، سپس صفحه را دوباره بارگذاری کن. اگر از مرورگر داخلی استفاده می‌کنی، فایل را با Chrome باز کن.</small>'
+      + '<button onclick="location.reload()" style="margin-top:18px;padding:12px 22px;border:0;border-radius:10px;font-weight:bold">تلاش دوباره</button>';
+  }
+  function tryNext(){
+    if (window.THREE) {
+      try { startLifeCity(); }
+      catch (error) {
+        console.error('LIFE CITY startup error:', error);
+        const detail = (error && (error.stack || error.message)) ? String(error.stack || error.message) : String(error);
+        loading.innerHTML = 'در شروع بازی خطایی رخ داد.'
+          + '<small style="display:block;direction:ltr;text-align:left;max-width:92vw;max-height:42vh;overflow:auto;white-space:pre-wrap;word-break:break-word;background:#081827;padding:12px;border-radius:10px;margin-top:14px;color:#ffd6a0;font:12px monospace">'
+          + detail.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+          + '</small><small>از این صفحه عکس بگیر و بفرست تا خطای دقیق را اصلاح کنم.</small>'
+          + '<button onclick="location.reload()" style="margin-top:14px;padding:10px 18px;border:0;border-radius:9px">تلاش دوباره</button>';
+      }
+      return;
+    }
+    if (index >= sources.length) { showFailure(); return; }
+    const url = sources[index++];
+    loading.innerHTML = 'در حال بارگذاری شهر LIFE CITY...'
+      + '<small>در حال اتصال به موتور گرافیکی؛ تلاش ' + index + ' از ' + sources.length + '</small>';
+    const script = document.createElement('script');
+    let finished = false;
+    const timer = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      script.remove();
+      tryNext();
+    }, 9000);
+    script.onload = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      if (window.THREE) tryNext();
+      else tryNext();
+    };
+    script.onerror = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      script.remove();
+      tryNext();
+    };
+    script.src = url;
+    document.head.appendChild(script);
+  }
+  tryNext();
+})();
+</script>
+</body></html>
